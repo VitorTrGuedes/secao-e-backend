@@ -1,0 +1,48 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+# ==========================================
+# 1. AMBIENTE VIRTUAL (NÃO SUBIR - É MUITO PESADO)
+# ==========================================
+venv/
+.venv/
+env/
+ENV/
+
+# ==========================================
+# 2. CACHE DO PYTHON (Arquivos temporários compilados)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# ==========================================
+# 3. BANCO DE DADOS LOCAL (SQLite)
+# ==========================================
+*.sqlite3
+*.sqlite3-journal
+
+# ==========================================
+# 4. SEGREDOS E VARIÁVEIS DE AMBIENTE (NUNCA SUBIR PARA O GITHUB)
+# ==========================================
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# 5. ARQUIVOS ESTÁTICOS E UPLOADS LOCAIS
+# ==========================================
+/staticfiles/
+/media/
+
+# ==========================================
+# 6. CONFIGURAÇÕES DO VS CODE E SISTEMA OPERACIONAL
+# ==========================================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# 7. LOGS DE ERRO
+# ==========================================
+*.log
