@@ -5,8 +5,8 @@ from .models import Article, Comment, Suggestion
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ('title', 'category', 'post-type', 'rating', 'created_at')
-    list_filter = ('category', 'post-type')
+    list_display = ('title', 'category', 'post_type', 'rating', 'created_at')
+    list_filter = ('category', 'post_type')
     search_fields = ('title', 'content')
     prepopulated_fields = {'slug': ('title',)} # Preenche o slug automaticamente quando você digita o título!
 
@@ -14,8 +14,8 @@ class ArticleAdmin(admin.ModelAdmin):
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     list_display = ('author_name', 'article', 'is_approved', 'created_at')
-    list_filter = ('is_approved', 'created-at')
-    search_fields = ('author_name', 'created-at')
+    list_filter = ('is_approved', 'created_at')
+    search_fields = ('author_name', 'opinion')
 
 
 @admin.register(Suggestion)
