@@ -22,4 +22,4 @@ class ArticleSerializer(serializers.ModelSerializer):
 class SuggestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Suggestion
-        fields = ['id', 'autot_name', 'title_suggested', 'category', 'reason', 'created_at']
+        fields = ['id', 'author_name', 'title_suggested', 'category', 'reason', 'created_at']

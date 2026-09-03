@@ -34,4 +34,5 @@ class Suggestion(models.Model):
     author_name = models.CharField(max_length=100)
     title_suggested = models.CharField(max_length=200)
     category = models.TextField()
+    reason = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
