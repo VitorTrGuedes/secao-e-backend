@@ -1,0 +1,27 @@
+# Ambientes Virtuais
+venv/
+.venv/
+env/
+
+# Cache do python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Banco de dados Local
+*.sqlite3
+*.sqlite3-journal
+
+#Segredos e Variáveis
+.env
+.env.*
+
+# Git e Editor
+.git
+.gitignore
+.vscode/
+
+# Arquivos Docker
+Dockerfile
+.dockerignore
+
