@@ -11,6 +11,7 @@ class Article(models.Model):
     TYPE_CHOICES = (('news', 'Notícia'), ('review', 'Crítica'))
     title = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
+    author = models.CharField(max_length=100, default='Kallavan', verbose_name="Autor")
     category = models.CharField(max_length=10, choices=CATEGORY_CHOICES)
     post_type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='news')
     image_url = models.URLField(blank=True, null=True)
