@@ -13,7 +13,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'title', 'slug', 'category', 'post_type', 'image_url', 'content', 'rating', 'created_at', 'comments']
+        fields = ['id', 'title', 'slug', 'category', 'post_type', 'author', 'image_url', 'content', 'rating', 'created_at', 'comments']
 
     def get_comments(self, obj):
         return CommentSerializer(obj.comments.filter(is_approved=True), many=True).data
