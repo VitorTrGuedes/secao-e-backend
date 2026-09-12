@@ -38,6 +38,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+
+    # 🔐 AUTENTICAÇÃO EM 2 ETAPAS (2FA)
+    'django_otp',
+    'django_otp.plugins.otp_totp',
+
+
     'rest_framework',
     'core',
 ]
@@ -49,6 +56,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPmiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -131,3 +139,19 @@ MAILERS = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+# ==============================================================================
+# CONFIGURAÇÃO DE E-MAIL
+# ==============================================================================
+# Em desenvolvimento: o e-mail não é enviado de verdade; o link seguro de 
+# recuperação aparece impresso direto no terminal do seu VS Code!
+EMAIL_BACKEND = 'django.core.mail.backends.comsole.EmailBackend'
+
+# Em produção (no Render), você trocará por um servidor SMTP real (ex: Gmail, Resend ou Brevo):
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'seu-email@gmail.com'
+# EMAIL_HOST_PASSWORD = os.getenv('EMAIL_APP_PASSWORD')
+DEFAULT_FROM_EMAIL = 'Seção E <suporte@secao-e.com>'
