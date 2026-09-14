@@ -123,7 +123,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-STATC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 
 # Email
