@@ -2,11 +2,14 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
+from django.http import HttpResponse
 from rest_framework.routers import DefaultRouter
 from core.views import ArticleViewSet, CommentViewSet, SuggestionViewSet
-from django_otp.admin import OTPAdminSite
-#admin.site.__class__ = OTPAdminSite
-path('gestao-secao-e/', admin.site.urls),
+
+
+
+def health_check(request):
+    return HttpResponse("OK", content_type="text/plain")
 
 # Configurar o Roteador da API
 
@@ -16,11 +19,14 @@ router.register(r'comments', CommentViewSet)
 router.register(r'suggestions', SuggestionViewSet)
 
 urlpatterns = [
-    # 🔒 ROTAS DE RECUPERAÇÃO DE SENHA DO ADMIN:
-    path('recuperar-senha/', auth_views.PasswordResetView.as_view(), name='password_reset'),
-    path('recuperar-senha/enviado/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
-    path('recuperar-senha/confirmar/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
-    path('recuperar-senha/concluido/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+    # 💓 Rota de saúde para manter o Render acordado
+    path('health/', health_check, name='health_check'),
+
+    # 🔒 FLUXO NORMAL DE RECUPERAÇÃO DE SENHA:
+    path('admin/password_reset/', auth_views.PasswordResetView.as_view(), name='admin_password_reset'), # ✨ Nome padrão do Django
+    path('admin/password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
+    path('admin/reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('admin/reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
     
 
     # Painel Administrativo
