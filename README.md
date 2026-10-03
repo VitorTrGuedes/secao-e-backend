@@ -1,5 +1,4 @@
-code
-Markdown
+
 # 🎬 Seção E — Backend API
 
 <p align="center">
