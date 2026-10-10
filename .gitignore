@@ -1,0 +1,30 @@
+# 1. Ambientes Virtuais (Pesado - NÃO SUBIR)
+venv/
+.venv/
+env/
+ENV/
+
+# 2. Cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# 3. Banco de Dados Local (SQLite)
+*.sqlite3
+*.sqlite3-journal
+
+# 4. Segredos e Variáveis de Ambiente (NUNCA SUBIR)
+.env
+.env.*
+!.env.example
+
+# 5. Arquivos Estáticos e Mídias Coletadas
+/staticfiles/
+/media/
+
+# 6. IDEs e Sistema Operacional
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

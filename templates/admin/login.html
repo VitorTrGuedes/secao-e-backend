@@ -1,0 +1,13 @@
+{% extends "admin/login.html" %}
+
+{% block content %}
+  {{ block.super }}
+  
+  <!-- BOTÃO DE RECUPERAÇÃO DE SENHA SEÇÃO E -->
+  <div style="margin-top: 20px; text-align: center; border-top: 1px solid var(--hairline-color, #374151); padding-top: 18px;">
+    <a href="{% url 'admin_password_reset' %}" 
+       style="display: inline-block; width: 100%; box-sizing: border-box; background-color: #e11d48; color: #ffffff; padding: 10px 14px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px; transition: 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);">
+      🔑 Esqueci minha senha / Recuperar acesso
+    </a>
+  </div>
+{% endblock %}

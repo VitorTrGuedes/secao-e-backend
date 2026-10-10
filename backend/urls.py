@@ -5,11 +5,9 @@ from django.contrib.auth import views as auth_views
 from django.http import HttpResponse
 from rest_framework.routers import DefaultRouter
 from core.views import ArticleViewSet, CommentViewSet, SuggestionViewSet
-
-
-
-def health_check(request):
-    return HttpResponse("OK", content_type="text/plain")
+from django_otp.admin import OTPAdminSite
+#admin.site.__class__ = OTPAdminSite
+path('gestao-secao-e/', admin.site.urls),
 
 # Configurar o Roteador da API
 
