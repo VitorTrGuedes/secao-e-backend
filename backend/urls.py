@@ -17,8 +17,6 @@ router.register(r'comments', CommentViewSet)
 router.register(r'suggestions', SuggestionViewSet)
 
 urlpatterns = [
-    # 💓 Rota de saúde para manter o Render acordado
-    path('health/', health_check, name='health_check'),
 
     # 🔒 FLUXO NORMAL DE RECUPERAÇÃO DE SENHA:
     path('admin/password_reset/', auth_views.PasswordResetView.as_view(), name='admin_password_reset'), # ✨ Nome padrão do Django
