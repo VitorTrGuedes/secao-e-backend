@@ -3,6 +3,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.utils.text import slugify
 import urllib.error
 import urllib.request
+from core.content import extract_article_content
 from core.models import Article
 
 # Fontes RSS de notícias públicas
@@ -69,7 +70,8 @@ class Command(BaseCommand):
                     continue
 
                 summary = getattr(entry, 'summary', '') or getattr(entry, 'description', '')
-                texto_limpo = summary.replace('<p>', '').replace('</p>', '').replace('<b>', '').replace('</b>', '')[:400]
+                texto_limpo, summary_image = extract_article_content(summary)
+                texto_limpo = texto_limpo[:400]
                 texto_completo = f"{title} {texto_limpo}".lower()
 
                 if source['category'] == 'anime':
@@ -88,6 +90,8 @@ class Command(BaseCommand):
                         if 'image' in link.get('type', ''):
                             image_url = link.get('href', image_url)
                             break
+                    else:
+                        image_url = summary_image or image_url
 
                 link_original = getattr(entry, 'link', '#')
                 Article.objects.create(

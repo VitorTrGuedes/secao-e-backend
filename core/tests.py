@@ -34,6 +34,19 @@ class ArticleAPITest(APITestCase):
         self.assertEqual(response.data[0]['post_type'], 'review')
         self.assertEqual(response.data[0]['comments'][0]['opinion'], 'Tatakae!')
 
+    def test_limpa_html_de_conteudo_antigo_na_resposta(self):
+        self.article.content = (
+            '<p>Anime &amp; cultura <strong>em destaque</strong></p>'
+            '<img alt="capa" src="https://example.com/capa.jpg">'
+            '<script>conteudo indesejado</script>'
+        )
+        self.article.save(update_fields=['content'])
+
+        response = self.client.get(f'/api/articles/{self.article.slug}/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['content'], 'Anime & cultura em destaque')
+
     def test_detalhar_artigo_por_slug(self):
         response = self.client.get(f'/api/articles/{self.article.slug}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -55,7 +68,12 @@ class BuscarNoticiasCommandTest(APITestCase):
     def test_importa_todas_as_noticias_do_feed(self, parse_feed, urlopen):
         urlopen.return_value = BytesIO(b'<rss/>')
         parse_feed.return_value = SimpleNamespace(entries=[
-            SimpleNamespace(title='Notícia Um', summary='Resumo um', link='https://example.com/1'),
+            SimpleNamespace(
+                title='Notícia Um',
+                summary='<p>Resumo &amp; destaque <strong>do feed</strong></p>'
+                        '<img alt="capa" src="https://example.com/poster.jpg">',
+                link='https://example.com/1',
+            ),
             SimpleNamespace(title='Notícia Dois', summary='Resumo dois', link='https://example.com/2'),
         ])
 
@@ -66,6 +84,9 @@ class BuscarNoticiasCommandTest(APITestCase):
             set(Article.objects.values_list('title', flat=True)),
             {'Notícia Um', 'Notícia Dois'},
         )
+        article = Article.objects.get(title='Notícia Um')
+        self.assertEqual(article.content, 'Resumo & destaque do feed...\n\n(Fonte original: https://example.com/1)')
+        self.assertEqual(article.image_url, 'https://example.com/poster.jpg')
 
 
 
