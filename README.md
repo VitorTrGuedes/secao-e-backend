@@ -42,7 +42,7 @@
 
 ## 📡 Endpoints da API
 
-Notícias e críticas são cadastradas manualmente pelo painel `/admin/`, no modelo `Article`, escolhendo o tipo `Notícia` ou `Crítica`. A API de artigos é somente de leitura. Para importar notícias automaticamente pelos feeds RSS configurados, execute `python manage.py buscar_noticias`; o importador converte o resumo HTML do feed em texto e aproveita imagens quando disponíveis. A conexão definida em `DATABASE_URL` precisa estar válida.
+Notícias e críticas são cadastradas manualmente pelo painel `/admin/`, no modelo `Article`, escolhendo o tipo `Notícia` ou `Crítica`. A API de artigos é somente de leitura. Para importar notícias automaticamente pelos feeds RSS configurados, execute `python manage.py buscar_noticias`; o importador mantém o resumo completo fornecido pelo feed, aproveita imagens e miniaturas publicadas nele, atualiza notícias automáticas existentes sem alterar publicações manuais e mantém um link para a matéria original. O texto integral deve ser consultado no site de origem, salvo quando houver autorização para republicá-lo. A conexão definida em `DATABASE_URL` precisa estar válida.
 
 | Método | Endpoint | Descrição | Autenticação |
 | :--- | :--- | :--- | :--- |

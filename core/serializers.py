@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .content import clean_article_content
+from .content import split_article_source
 from .models import Article, Comment, Suggestion
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -11,17 +11,21 @@ class CommentSerializer(serializers.ModelSerializer):
 class ArticleSerializer(serializers.ModelSerializer):
     comments = serializers.SerializerMethodField()
     content = serializers.SerializerMethodField()
+    source_url = serializers.SerializerMethodField()
 
 
     class Meta:
         model = Article
-        fields = ['id', 'title', 'slug', 'category', 'post_type', 'author', 'image_url', 'content', 'rating', 'created_at', 'comments']
+        fields = ['id', 'title', 'slug', 'category', 'post_type', 'author', 'image_url', 'content', 'source_url', 'rating', 'created_at', 'comments']
 
     def get_comments(self, obj):
         return CommentSerializer(obj.comments.filter(is_approved=True), many=True).data
 
     def get_content(self, obj):
-        return clean_article_content(obj.content)
+        return split_article_source(obj.content)[0]
+
+    def get_source_url(self, obj):
+        return split_article_source(obj.content)[1]
 
 
 class SuggestionSerializer(serializers.ModelSerializer):
