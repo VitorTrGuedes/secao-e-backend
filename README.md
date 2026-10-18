@@ -42,6 +42,8 @@
 
 ## 📡 Endpoints da API
 
+Notícias e críticas são cadastradas manualmente pelo painel `/admin/`, no modelo `Article`, escolhendo o tipo `Notícia` ou `Crítica`. A API de artigos é somente de leitura. Para importar notícias automaticamente pelos feeds RSS configurados, execute `python manage.py buscar_noticias`; a conexão definida em `DATABASE_URL` precisa estar válida.
+
 | Método | Endpoint | Descrição | Autenticação |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/articles/` | Lista todas as notícias e análises publicadas | Pública |

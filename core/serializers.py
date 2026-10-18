@@ -8,7 +8,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class ArticleSerializer(serializers.ModelSerializer):
-    comments = serializers.SerializerMethodField
+    comments = serializers.SerializerMethodField()
 
 
     class Meta:
