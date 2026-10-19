@@ -60,6 +60,22 @@ class ArticleAPITest(APITestCase):
         self.assertEqual(response.data['content'], 'Resumo da notícia.')
         self.assertEqual(response.data['source_url'], 'https://example.com/noticia')
 
+    def test_entrega_html_formatado_sem_elementos_ou_links_perigosos(self):
+        self.article.content = (
+            '<p>Texto <strong>com destaque</strong></p>'
+            '<script>alert("x")</script>'
+            '<a href="javascript:alert(1)">link inseguro</a>'
+        )
+        self.article.save(update_fields=['content'])
+
+        response = self.client.get(f'/api/articles/{self.article.slug}/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data['content_html'],
+            '<p>Texto <strong>com destaque</strong></p><a>link inseguro</a>',
+        )
+
     def test_detalhar_artigo_por_slug(self):
         response = self.client.get(f'/api/articles/{self.article.slug}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -116,6 +132,13 @@ class BuscarNoticiasCommandTest(APITestCase):
             SimpleNamespace(
                 title='Notícia Existente',
                 summary=f'<p>{full_summary}</p>',
+                content=[{
+                    'type': 'text/html',
+                    'value': (
+                        f'<p>{full_summary.strip()}</p>'
+                        '<img src="/images/capa.jpg" onerror="alert(1)">'
+                    ),
+                }],
                 link='https://example.com/noticia',
                 enclosures=[{
                     'href': '/images/capa.jpg',
@@ -136,7 +159,12 @@ class BuscarNoticiasCommandTest(APITestCase):
         call_command('buscar_noticias')
 
         article.refresh_from_db()
-        self.assertEqual(article.content, f'{full_summary.strip()}\n\n(Fonte original: https://example.com/noticia)')
+        self.assertEqual(
+            article.content,
+            f'<p>{full_summary.strip()}</p>'
+            '<img src="https://example.com/images/capa.jpg" alt="" loading="lazy">'
+            '\n\n(Fonte original: https://example.com/noticia)',
+        )
         self.assertEqual(article.image_url, 'https://example.com/images/capa.jpg')
         self.assertEqual(Article.objects.count(), 1)
 

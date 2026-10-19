@@ -4,7 +4,7 @@ from django.utils.text import slugify
 import urllib.error
 import urllib.request
 from urllib.parse import urljoin, urlsplit
-from core.content import extract_article_content
+from core.content import extract_article_content, sanitize_article_html
 from core.models import Article
 
 # Fontes RSS de notícias públicas
@@ -94,6 +94,14 @@ def _find_entry_image(entry, summary_image, base_url):
     return None
 
 
+def _entry_full_content(entry):
+    for content in _entry_value(entry, 'content', []) or []:
+        content_value = _entry_value(content, 'value', '')
+        if content_value:
+            return content_value
+    return ''
+
+
 class Command(BaseCommand):
     help = 'Coleta notícias automáticas de Cinema, Animes e Séries via RSS'
 
@@ -138,7 +146,15 @@ class Command(BaseCommand):
                     continue
 
                 summary = getattr(entry, 'summary', '') or getattr(entry, 'description', '')
-                texto_limpo, summary_image = extract_article_content(summary)
+                full_content = _entry_full_content(entry)
+                article_source = full_content or summary
+                if full_content:
+                    texto_limpo, content_image = extract_article_content(full_content)
+                    summary_text, summary_image = extract_article_content(summary)
+                    texto_limpo = texto_limpo or summary_text
+                    summary_image = summary_image or content_image
+                else:
+                    texto_limpo, summary_image = extract_article_content(summary)
                 texto_completo = f"{title} {texto_limpo}".lower()
 
                 if source['category'] == 'anime':
@@ -150,7 +166,10 @@ class Command(BaseCommand):
 
                 link_original = getattr(entry, 'link', '')
                 image_url = _find_entry_image(entry, summary_image, link_original or source['url'])
-                article_content = texto_limpo
+                article_content = (
+                    sanitize_article_html(article_source, base_url=link_original or source['url'])
+                    if full_content else texto_limpo
+                )
                 if link_original:
                     article_content = f"{article_content}\n\n(Fonte original: {link_original})"
 

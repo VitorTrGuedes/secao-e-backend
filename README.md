@@ -42,7 +42,9 @@
 
 ## 📡 Endpoints da API
 
-Notícias e críticas são cadastradas manualmente pelo painel `/admin/`, no modelo `Article`, escolhendo o tipo `Notícia` ou `Crítica`. A API de artigos é somente de leitura. Para importar notícias automaticamente pelos feeds RSS configurados, execute `python manage.py buscar_noticias`; o importador mantém o resumo completo fornecido pelo feed, aproveita imagens e miniaturas publicadas nele, atualiza notícias automáticas existentes sem alterar publicações manuais e mantém um link para a matéria original. O texto integral deve ser consultado no site de origem, salvo quando houver autorização para republicá-lo. A conexão definida em `DATABASE_URL` precisa estar válida.
+Notícias e críticas são cadastradas manualmente pelo painel `/admin/`, no modelo `Article`, escolhendo o tipo `Notícia` ou `Crítica`. A API de artigos é somente de leitura. Para importar notícias automaticamente pelos feeds RSS configurados, execute `python manage.py buscar_noticias`; quando o feed publica o corpo completo, o importador preserva sua formatação e imagens, sanitiza o HTML antes da exibição e mantém um link para a matéria original. Se o feed fornecer apenas um resumo, esse resumo é exibido com o link para a fonte. Notícias automáticas existentes também são atualizadas sem alterar publicações manuais. A conexão definida em `DATABASE_URL` precisa estar válida.
+
+O GitHub Actions executa a importação RSS uma vez por dia às 07:00 no horário de Brasília (UTC−3). O agendador usa UTC, portanto o workflow está configurado para 10:00 UTC. Para habilitar a execução, cadastre a connection string do PostgreSQL como segredo `DATABASE_URL` em **Settings → Secrets and variables → Actions**. O workflow também pode ser iniciado manualmente pela aba **Actions**. O GitHub pode iniciar tarefas agendadas alguns minutos depois do horário configurado.
 
 | Método | Endpoint | Descrição | Autenticação |
 | :--- | :--- | :--- | :--- |
