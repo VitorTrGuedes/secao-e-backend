@@ -52,11 +52,19 @@ class _SafeArticleHtmlParser(HTMLParser):
     }
     void_tags = {'br', 'hr', 'img'}
 
-    def __init__(self, base_url=None):
+    def __init__(self, base_url=None, excluded_image_url=None):
         super().__init__(convert_charrefs=True)
         self.base_url = base_url
+        self.excluded_image_url = self._safe_url(excluded_image_url)
         self.html_parts = []
         self.skip_depth = 0
+        self.figure_buffer = None
+
+    def _append(self, value):
+        if self.figure_buffer is not None:
+            self.figure_buffer.append(value)
+        else:
+            self.html_parts.append(value)
 
     def _safe_url(self, value):
         if not value:
@@ -84,15 +92,18 @@ class _SafeArticleHtmlParser(HTMLParser):
                 return
         elif tag == 'img':
             src = self._safe_url(attributes.get('src'))
-            if src:
-                alt = escape(attributes.get('alt', ''), quote=True)
-                self.html_parts.append(
-                    f'<img src="{escape(src, quote=True)}" alt="{alt}" loading="lazy">'
-                )
+            if not src or src == self.excluded_image_url:
                 return
+            alt = escape(attributes.get('alt', ''), quote=True)
+            self._append(
+                f'<img src="{escape(src, quote=True)}" alt="{alt}" loading="lazy">'
+            )
+            return
+        elif tag == 'figure':
+            self.figure_buffer = []
             return
 
-        self.html_parts.append(f'<{tag}>')
+        self._append(f'<{tag}>')
 
     def handle_startendtag(self, tag, attrs):
         self.handle_starttag(tag, attrs)
@@ -103,12 +114,18 @@ class _SafeArticleHtmlParser(HTMLParser):
         if tag in {'script', 'style'} and self.skip_depth:
             self.skip_depth -= 1
             return
+        if tag == 'figure' and self.figure_buffer is not None:
+            figure_content = ''.join(self.figure_buffer)
+            if figure_content.strip():
+                self.html_parts.append(f'<figure>{figure_content}</figure>')
+            self.figure_buffer = None
+            return
         if not self.skip_depth and tag in self.allowed_tags and tag not in self.void_tags:
-            self.html_parts.append(f'</{tag}>')
+            self._append(f'</{tag}>')
 
     def handle_data(self, data):
         if not self.skip_depth:
-            self.html_parts.append(escape(data))
+            self._append(escape(data))
 
 
 def extract_article_content(content):
@@ -125,7 +142,7 @@ def extract_article_content(content):
     return text.strip(), parser.image_url
 
 
-def sanitize_article_html(content, base_url=None):
+def sanitize_article_html(content, base_url=None, excluded_image_url=None):
     clean_content, source_url = split_article_source(content)
     if source_url:
         decoded_content = unescape(content or '')
@@ -133,7 +150,10 @@ def sanitize_article_html(content, base_url=None):
         if source_marker >= 0:
             content = decoded_content[:source_marker].rstrip()
 
-    parser = _SafeArticleHtmlParser(base_url=base_url)
+    parser = _SafeArticleHtmlParser(
+        base_url=base_url,
+        excluded_image_url=excluded_image_url,
+    )
     parser.feed(unescape(content or ''))
     parser.close()
     return ''.join(parser.html_parts).strip()

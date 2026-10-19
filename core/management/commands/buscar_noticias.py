@@ -57,7 +57,12 @@ def _media_image_url(media, base_url):
     return resolved_url
 
 
-def _find_entry_image(entry, summary_image, base_url):
+def _find_entry_image(entry, summary_image, base_url, preferred_image=None):
+    if preferred_image:
+        resolved_url = urljoin(base_url, preferred_image)
+        if urlsplit(resolved_url).scheme in {'http', 'https'}:
+            return resolved_url
+
     candidate_groups = (
         _entry_value(entry, 'media_content', []),
         _entry_value(entry, 'media_thumbnail', []),
@@ -148,11 +153,11 @@ class Command(BaseCommand):
                 summary = getattr(entry, 'summary', '') or getattr(entry, 'description', '')
                 full_content = _entry_full_content(entry)
                 article_source = full_content or summary
+                content_image = None
                 if full_content:
                     texto_limpo, content_image = extract_article_content(full_content)
                     summary_text, summary_image = extract_article_content(summary)
                     texto_limpo = texto_limpo or summary_text
-                    summary_image = summary_image or content_image
                 else:
                     texto_limpo, summary_image = extract_article_content(summary)
                 texto_completo = f"{title} {texto_limpo}".lower()
@@ -165,7 +170,12 @@ class Command(BaseCommand):
                     categoria = 'cinema'
 
                 link_original = getattr(entry, 'link', '')
-                image_url = _find_entry_image(entry, summary_image, link_original or source['url'])
+                image_url = _find_entry_image(
+                    entry,
+                    summary_image,
+                    link_original or source['url'],
+                    preferred_image=content_image,
+                )
                 article_content = (
                     sanitize_article_html(article_source, base_url=link_original or source['url'])
                     if full_content else texto_limpo

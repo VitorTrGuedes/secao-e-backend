@@ -76,6 +76,31 @@ class ArticleAPITest(APITestCase):
             '<p>Texto <strong>com destaque</strong></p><a>link inseguro</a>',
         )
 
+    def test_promove_imagem_principal_e_remove_repeticao_do_corpo(self):
+        self.article.image_url = 'https://example.com/capa-generica.jpg'
+        self.article.content = (
+            '<figure><img src="/images/capa.jpg">'
+            '<figcaption>Imagem promocional</figcaption></figure>'
+            '<p>Texto integral da notícia.</p>'
+            '<img src="https://example.com/images/outra.jpg">'
+            '\n\n(Fonte original: https://example.com/noticia)'
+        )
+        self.article.save(update_fields=['image_url', 'content'])
+
+        response = self.client.get(f'/api/articles/{self.article.slug}/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data['image_url'],
+            'https://example.com/images/capa.jpg',
+        )
+        self.assertEqual(
+            response.data['content_html'],
+            '<figure><figcaption>Imagem promocional</figcaption></figure>'
+            '<p>Texto integral da notícia.</p>'
+            '<img src="https://example.com/images/outra.jpg" alt="" loading="lazy">',
+        )
+
     def test_detalhar_artigo_por_slug(self):
         response = self.client.get(f'/api/articles/{self.article.slug}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -136,12 +161,12 @@ class BuscarNoticiasCommandTest(APITestCase):
                     'type': 'text/html',
                     'value': (
                         f'<p>{full_summary.strip()}</p>'
-                        '<img src="/images/capa.jpg" onerror="alert(1)">'
+                        '<img src="/images/capa-principal.jpg" onerror="alert(1)">'
                     ),
                 }],
                 link='https://example.com/noticia',
                 enclosures=[{
-                    'href': '/images/capa.jpg',
+                    'href': '/images/capa-miniatura.jpg',
                     'type': 'image/jpeg',
                 }],
             ),
@@ -162,10 +187,10 @@ class BuscarNoticiasCommandTest(APITestCase):
         self.assertEqual(
             article.content,
             f'<p>{full_summary.strip()}</p>'
-            '<img src="https://example.com/images/capa.jpg" alt="" loading="lazy">'
+            '<img src="https://example.com/images/capa-principal.jpg" alt="" loading="lazy">'
             '\n\n(Fonte original: https://example.com/noticia)',
         )
-        self.assertEqual(article.image_url, 'https://example.com/images/capa.jpg')
+        self.assertEqual(article.image_url, 'https://example.com/images/capa-principal.jpg')
         self.assertEqual(Article.objects.count(), 1)
 
     def test_corrige_espacamento_e_entidades_em_html_rss(self):
