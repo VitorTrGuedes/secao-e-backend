@@ -50,10 +50,13 @@ O GitHub Actions executa a importação RSS uma vez por dia às 07:00 no horári
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/articles/` | Lista todas as notícias e análises publicadas | Pública |
 | `GET` | `/api/articles/{slug}/` | Detalhes de um post específico + comentários aprovados | Pública |
-| `POST` | `/api/comments/` | Envio de nova opinião/comentário (Rate Limit: 5/min) | Pública |
+| `POST` | `/api/comments/` | Envia comentário para o e-mail informado confirmar (Rate Limit: 5/min) | Pública |
+| `POST` | `/api/comments/confirm/` | Confirma o e-mail e publica o comentário; link válido por 24 horas e uso único | Pública |
 | `POST` | `/api/suggestions/` | Envio de sugestão de próxima crítica (Rate Limit: 5/min) | Pública |
-| `GET/POST` | `/admin/` | Painel administrativo com 2FA | Superuser + TOTP |
+| `GET/POST` | `/admin/` | Painel Administrativo com 2FA | Superuser + TOTP |
 | `GET/POST` | `/recuperar-senha/` | Fluxo de recuperação de senha por e-mail | Pública |
+
+Comentários novos só aparecem depois da confirmação do e-mail. O endereço fica privado, não é incluído nas respostas públicas da API e pode ser consultado no painel administrativo. No `/admin/`, filtre comentários por status, desmarque `is_approved` para ocultá-los ou use a ação de exclusão para removê-los.
 
 ---
 
@@ -140,7 +143,10 @@ SECRET_KEY
 DEBUG=False
 DATABASE_URL (URL interna do PostgreSQL)
 CORS_ALLOWED_ORIGINS (URL do frontend na Vercel)
+FRONTEND_URL (URL pública do frontend, usada no link de confirmação de comentários)
+RESEND_API_KEY (chave da API do Resend para enviar os e-mails de confirmação)
 
+O remetente definido em `DEFAULT_FROM_EMAIL` também precisa estar verificado no Resend.
 
 👤 Autor
 Desenvolvido por Vitor Guedes.

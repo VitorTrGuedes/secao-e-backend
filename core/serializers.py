@@ -5,9 +5,15 @@ from .content import extract_article_content, sanitize_article_html, split_artic
 from .models import Article, Comment, Suggestion
 
 class CommentSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(write_only=True)
+
     class Meta:
         model = Comment
-        fields = ['id', 'article', 'author_name', 'opinion', 'created_at']
+        fields = ['id', 'article', 'author_name', 'email', 'opinion', 'created_at']
+
+
+class CommentConfirmationSerializer(serializers.Serializer):
+    token = serializers.CharField(max_length=128)
 
 
 class ArticleSerializer(serializers.ModelSerializer):

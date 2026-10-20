@@ -1,11 +1,17 @@
 from io import BytesIO
 from types import SimpleNamespace
 from unittest.mock import patch
+from datetime import timedelta
+from urllib.parse import parse_qs, urlsplit
 
 from django.test import TestCase
 from django.core.management import call_command
+from django.core import mail
+from django.test import override_settings
+from django.utils import timezone
 from rest_framework.test import APITestCase
 from rest_framework import status
+from rest_framework.throttling import SimpleRateThrottle
 from .content import extract_article_content
 from .models import Article, Comment, Suggestion
 
@@ -24,6 +30,7 @@ class ArticleAPITest(APITestCase):
         Comment.objects.create(
             article = self.article,
             author_name = "Eren",
+            email = "eren@example.com",
             opinion = "Tatakae!",
             is_approved = True
         )
@@ -47,12 +54,14 @@ class ArticleAPITest(APITestCase):
             Comment.objects.create(
                 article=article,
                 author_name='Leitor',
+                email='leitor@example.com',
                 opinion='Comentário aprovado.',
                 is_approved=True,
             )
             Comment.objects.create(
                 article=article,
                 author_name='Moderador',
+                email='moderador@example.com',
                 opinion='Comentário pendente.',
                 is_approved=False,
             )
@@ -231,8 +240,13 @@ class BuscarNoticiasCommandTest(APITestCase):
         self.assertIsNone(image_url)
 
 
+@override_settings(
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    FRONTEND_URL='https://secao-e.example',
+)
 class CommentAPITest(APITestCase):
     def setUp(self):
+        SimpleRateThrottle.cache.clear()
         self.article = Article.objects.create(
             title = "Filme Batman",
             slug = "filme-batman",
@@ -245,12 +259,95 @@ class CommentAPITest(APITestCase):
         payload = {
             "article": self.article.id,
             "author_name": "Bruce",
-            "opinion": "Filme promissor"
+            "email": "bruce@example.com",
+            "opinion": "Filme promissor",
         }
         response = self.client.post('/api/comments/', payload)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertNotIn('email', response.data)
+        self.assertFalse(Comment.objects.get().is_approved)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_comentario_so_aparece_apos_confirmar_email(self):
+        response = self.client.post('/api/comments/', {
+            'article': self.article.id,
+            'author_name': 'Bruce',
+            'email': 'bruce@example.com',
+            'opinion': 'Filme promissor',
+        })
+        comment = Comment.objects.get()
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertFalse(comment.is_approved)
+
+        pending_article = self.client.get(f'/api/articles/{self.article.slug}/')
+        self.assertEqual(pending_article.data['comments'], [])
+
+        confirmation_url = mail.outbox[0].body.splitlines()[3]
+        token = parse_qs(urlsplit(confirmation_url).query)['token'][0]
+        confirmation = self.client.post('/api/comments/confirm/', {'token': token})
+
+        self.assertEqual(confirmation.status_code, status.HTTP_200_OK)
+        self.assertEqual(confirmation.data['article_slug'], self.article.slug)
+        comment.refresh_from_db()
+        self.assertTrue(comment.is_approved)
+        self.assertEqual(comment.email_confirmation_token, '')
+
+        article_response = self.client.get(f'/api/articles/{self.article.slug}/')
+        self.assertEqual(len(article_response.data['comments']), 1)
+        self.assertNotIn('email', article_response.data['comments'][0])
+
+        reused_token = self.client.post('/api/comments/confirm/', {'token': token})
+        self.assertEqual(reused_token.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_rejeita_email_invalido_sem_criar_comentario(self):
+        response = self.client.post('/api/comments/', {
+            'article': self.article.id,
+            'author_name': 'Bruce',
+            'email': 'endereco-invalido',
+            'opinion': 'Filme promissor',
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(Comment.objects.count(), 0)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_link_de_confirmacao_expirado_nao_publica_comentario(self):
+        self.client.post('/api/comments/', {
+            'article': self.article.id,
+            'author_name': 'Bruce',
+            'email': 'bruce@example.com',
+            'opinion': 'Filme promissor',
+        })
+        comment = Comment.objects.get()
+        confirmation_url = mail.outbox[0].body.splitlines()[3]
+        token = parse_qs(urlsplit(confirmation_url).query)['token'][0]
+        comment.email_confirmation_sent_at = timezone.now() - timedelta(hours=25)
+        comment.save(update_fields=['email_confirmation_sent_at'])
+
+        response = self.client.post('/api/comments/confirm/', {'token': token})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        comment.refresh_from_db()
+        self.assertFalse(comment.is_approved)
+
+    @patch('core.views.send_mail', side_effect=RuntimeError('Email provider unavailable'))
+    def test_falha_de_envio_nao_salva_comentario_pendente(self, send_mail_mock):
+        with self.assertLogs('core.views', level='ERROR'):
+            response = self.client.post('/api/comments/', {
+                'article': self.article.id,
+                'author_name': 'Bruce',
+                'email': 'bruce@example.com',
+                'opinion': 'Filme promissor',
+            })
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(Comment.objects.count(), 0)
+        send_mail_mock.assert_called_once()
 
 class SuggestionAPITest(APITestCase):
+    def setUp(self):
+        SimpleRateThrottle.cache.clear()
+
     def test_criar_sugestao_valida(self):
         payload = {
             "author_name": "OtakuGirl",

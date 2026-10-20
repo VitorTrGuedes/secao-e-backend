@@ -148,3 +148,4 @@ CORS_ALLOW_ALL_ORIGINS = True
 # EMAIL_HOST_USER = 'seu-email@gmail.com'
 # EMAIL_HOST_PASSWORD = os.getenv('EMAIL_APP_PASSWORD')
 DEFAULT_FROM_EMAIL = 'Seção E <suporte@secao-e.com>'
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://secao-e.vercel.app')

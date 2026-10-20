@@ -13,9 +13,10 @@ class ArticleAdmin(admin.ModelAdmin):
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('author_name', 'article', 'is_approved', 'created_at')
+    list_display = ('author_name', 'email', 'article', 'is_approved', 'created_at')
+    list_editable = ('is_approved',)
     list_filter = ('is_approved', 'created_at')
-    search_fields = ('author_name', 'opinion')
+    search_fields = ('author_name', 'email', 'opinion')
 
 
 @admin.register(Suggestion)
@@ -24,6 +25,4 @@ class SuggestionAdmin(admin.ModelAdmin):
     list_filter = ('category',)
     search_fields = ('title_suggested', 'author_name', 'reason')
   
-
-
 

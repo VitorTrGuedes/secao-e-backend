@@ -4,7 +4,12 @@ from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from django.http import HttpResponse
 from rest_framework.routers import DefaultRouter
-from core.views import ArticleViewSet, CommentViewSet, SuggestionViewSet
+from core.views import (
+    ArticleViewSet,
+    CommentViewSet,
+    ConfirmCommentEmailView,
+    SuggestionViewSet,
+)
 from django_otp.admin import OTPAdminSite
 #admin.site.__class__ = OTPAdminSite
 path('gestao-secao-e/', admin.site.urls),
@@ -27,5 +32,6 @@ urlpatterns = [
 
     # Painel Administrativo
     path('admin/', admin.site.urls),
+    path('api/comments/confirm/', ConfirmCommentEmailView.as_view(), name='comment-email-confirmation'),
     path('api/', include(router.urls)) # Liga todas as rotas da API no prefixo /api/
 ]

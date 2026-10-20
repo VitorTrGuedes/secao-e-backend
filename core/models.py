@@ -26,8 +26,11 @@ class Article(models.Model):
 class Comment(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='comments')
     author_name = models.CharField(max_length=100)
+    email = models.EmailField()
     opinion = models.TextField()
-    is_approved = models.BooleanField(default=True)
+    is_approved = models.BooleanField(default=False)
+    email_confirmation_token = models.CharField(max_length=64, blank=True, editable=False)
+    email_confirmation_sent_at = models.DateTimeField(null=True, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
 
