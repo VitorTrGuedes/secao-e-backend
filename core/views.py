@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.db.models import Prefetch
 from rest_framework import viewsets
 from rest_framework.throttling import AnonRateThrottle
 from .models import Article, Comment, Suggestion
@@ -10,7 +11,13 @@ class PostThrottle(AnonRateThrottle):
     rate = '5/minute'
 
 class ArticleViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Article.objects.all().order_by('-created_at')
+    queryset = Article.objects.prefetch_related(
+        Prefetch(
+            'comments',
+            queryset=Comment.objects.filter(is_approved=True),
+            to_attr='approved_comments',
+        )
+    ).order_by('-created_at')
     serializer_class = ArticleSerializer
     lookup_field = 'slug'
 

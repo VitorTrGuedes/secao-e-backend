@@ -23,7 +23,10 @@ class ArticleSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'slug', 'category', 'post_type', 'author', 'image_url', 'content', 'content_html', 'source_url', 'rating', 'created_at', 'comments']
 
     def get_comments(self, obj):
-        return CommentSerializer(obj.comments.filter(is_approved=True), many=True).data
+            comments = getattr(obj, 'approved_comments', None)
+            if comments is None:
+                comments = obj.comments.filter(is_approved=True)
+            return CommentSerializer(comments, many=True).data
 
     def get_content(self, obj):
         return split_article_source(obj.content)[0]

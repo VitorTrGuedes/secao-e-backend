@@ -35,6 +35,35 @@ class ArticleAPITest(APITestCase):
         self.assertEqual(response.data[0]['post_type'], 'review')
         self.assertEqual(response.data[0]['comments'][0]['opinion'], 'Tatakae!')
 
+    def test_listagem_busca_comentarios_em_uma_consulta(self):
+        for index in range(3):
+            article = Article.objects.create(
+                title=f'Análise {index}',
+                slug=f'analise-{index}',
+                category='cinema',
+                post_type='review',
+                content='Conteúdo da análise.',
+            )
+            Comment.objects.create(
+                article=article,
+                author_name='Leitor',
+                opinion='Comentário aprovado.',
+                is_approved=True,
+            )
+            Comment.objects.create(
+                article=article,
+                author_name='Moderador',
+                opinion='Comentário pendente.',
+                is_approved=False,
+            )
+
+        with self.assertNumQueries(2):
+            response = self.client.get('/api/articles/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 4)
+        self.assertTrue(all(len(article['comments']) == 1 for article in response.data))
+
     def test_limpa_html_de_conteudo_antigo_na_resposta(self):
         self.article.content = (
             '<p>Anime &amp; cultura <strong>em destaque</strong></p>'
