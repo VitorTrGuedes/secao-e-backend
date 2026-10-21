@@ -20,7 +20,7 @@ FEEDS = [
     },
 
     {
-        'url': 'https://www.otakupt.com/feed/',
+        'url': 'https://www.animeunited.com.br/feed/',
         'category': 'anime',
     }
 ]
