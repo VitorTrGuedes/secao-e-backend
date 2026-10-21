@@ -44,7 +44,16 @@
 
 Notícias e críticas são cadastradas manualmente pelo painel `/admin/`, no modelo `Article`, escolhendo o tipo `Notícia` ou `Crítica`. A API de artigos é somente de leitura. Para importar notícias automaticamente pelos feeds RSS configurados, execute `python manage.py buscar_noticias`; quando o feed publica o corpo completo, o importador preserva sua formatação e imagens, sanitiza o HTML antes da exibição e mantém um link para a matéria original. Se o feed fornecer apenas um resumo, esse resumo é exibido com o link para a fonte. Notícias automáticas existentes também são atualizadas sem alterar publicações manuais. A conexão definida em `DATABASE_URL` precisa estar válida.
 
-O GitHub Actions executa a importação RSS uma vez por dia às 07:00 no horário de Brasília (UTC−3). O agendador usa UTC, portanto o workflow está configurado para 10:00 UTC. Para habilitar a execução, cadastre a connection string do PostgreSQL como segredo `DATABASE_URL` em **Settings → Secrets and variables → Actions**. O workflow também pode ser iniciado manualmente pela aba **Actions**. O GitHub pode iniciar tarefas agendadas alguns minutos depois do horário configurado.
+O GitHub Actions executa a importação RSS uma vez por dia às 07:17 no horário de Brasília (UTC−3). O agendador usa UTC, portanto o workflow está configurado para 10:17 UTC; esse horário alguns minutos depois da hora cheia ajuda a evitar o pico de agendamentos, mas o GitHub ainda pode atrasar uma execução agendada. Para habilitar a execução, cadastre a connection string do PostgreSQL como segredo `DATABASE_URL` em **Settings → Secrets and variables → Actions**.
+
+Para atualizar as notícias manualmente em caso de falha:
+1. Abra o repositório no GitHub e vá até a aba **Actions**.
+2. Na lista de workflows, selecione **Importar notícias RSS**.
+3. Clique em **Run workflow**, mantenha a branch `main` selecionada e confirme em **Run workflow**.
+4. Abra a execução criada e aguarde o job `importar-noticias` terminar. Confira se as etapas **Verificar configuração do banco** e **Importar notícias dos feeds RSS** ficaram verdes.
+5. Se a execução falhar, abra a etapa vermelha para ver o erro. Confirme que o segredo `DATABASE_URL` está configurado em **Settings → Secrets and variables → Actions** e tente novamente.
+
+Após uma execução bem-sucedida, a API passa a servir as notícias importadas. Atualize o site para buscar a lista atualizada.
 
 | Método | Endpoint | Descrição | Autenticação |
 | :--- | :--- | :--- | :--- |
