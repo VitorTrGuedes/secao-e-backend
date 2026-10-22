@@ -1,11 +1,14 @@
 from io import BytesIO
+from io import StringIO
 from types import SimpleNamespace
 from unittest.mock import patch
 from datetime import timedelta
+import urllib.error
 from urllib.parse import parse_qs, urlsplit
 
 from django.test import TestCase
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.core import mail
 from django.test import override_settings
 from django.utils import timezone
@@ -238,6 +241,56 @@ class BuscarNoticiasCommandTest(APITestCase):
 
         self.assertEqual(text, 'matando A Paramount & outras notícias')
         self.assertIsNone(image_url)
+
+    @patch(
+        'core.management.commands.buscar_noticias.FEEDS',
+        [
+            {'url': 'https://unavailable.example/feed.xml', 'category': 'anime'},
+            {'url': 'https://available.example/feed.xml', 'category': 'cinema'},
+        ],
+    )
+    @patch('core.management.commands.buscar_noticias.urllib.request.urlopen')
+    @patch('core.management.commands.buscar_noticias.feedparser.parse')
+    def test_importa_feeds_acessiveis_quando_outro_feed_falha(
+        self, parse_feed, urlopen
+    ):
+        urlopen.side_effect = [
+            urllib.error.URLError('connection refused'),
+            BytesIO(b'<rss/>'),
+        ]
+        parse_feed.return_value = SimpleNamespace(entries=[
+            SimpleNamespace(
+                title='Notícia do feed acessível',
+                summary='Resumo disponível',
+                link='https://available.example/noticia',
+            ),
+        ])
+        error_output = StringIO()
+
+        call_command('buscar_noticias', stderr=error_output)
+
+        self.assertTrue(
+            Article.objects.filter(title='Notícia do feed acessível').exists()
+        )
+        self.assertIn(
+            'Os feeds acessíveis foram importados.',
+            error_output.getvalue(),
+        )
+
+    @patch(
+        'core.management.commands.buscar_noticias.FEEDS',
+        [{'url': 'https://unavailable.example/feed.xml', 'category': 'anime'}],
+    )
+    @patch('core.management.commands.buscar_noticias.urllib.request.urlopen')
+    def test_falha_explicitamente_quando_todos_os_feeds_estao_indisponiveis(
+        self, urlopen
+    ):
+        urlopen.side_effect = urllib.error.URLError('connection refused')
+
+        with self.assertRaisesMessage(
+            CommandError, 'Falha ao consultar 1 feed(s) RSS'
+        ):
+            call_command('buscar_noticias')
 
 
 @override_settings(

@@ -114,6 +114,7 @@ class Command(BaseCommand):
         self.stdout.write("Iniciando Varredura de notícias...")
         total_novas = 0
         total_atualizadas = 0
+        feeds_consultados = 0
 
         # Simula um navegador real para não ser bloqueado pelos sites
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
@@ -132,6 +133,7 @@ class Command(BaseCommand):
                 ))
                 continue
 
+            feeds_consultados += 1
             feed = feedparser.parse(xml_content)
 
             for entry in feed.entries[:6]:
@@ -208,4 +210,12 @@ class Command(BaseCommand):
             f"\nFinalizado! {total_novas} notícias adicionadas e {total_atualizadas} atualizadas."
         ))
         if falhas_feed:
-            raise CommandError(f"Falha ao consultar {len(falhas_feed)} feed(s) RSS.")
+            feeds_com_falha = ', '.join(dict.fromkeys(falhas_feed))
+            mensagem = (
+                f"Falha ao consultar {len(falhas_feed)} feed(s) RSS: {feeds_com_falha}"
+            )
+            if feeds_consultados == 0:
+                raise CommandError(mensagem)
+            self.stderr.write(self.style.WARNING(
+                f"{mensagem}. Os feeds acessíveis foram importados."
+            ))
