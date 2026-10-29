@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 load_dotenv()
 
@@ -14,12 +15,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # 🔐 Lê a chave secreta do arquivo .env
-SECRET_KEY = os.getenv('SECRET_KEY', 'chave-temporaria-caso-nao-encontre')
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ImproperlyConfigured('SECRET_KEY must be configured in the environment')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+    if host.strip()
+]
+PASSWORD_RESET_DOMAIN = os.getenv('PASSWORD_RESET_DOMAIN', 'localhost:8000')
+PASSWORD_RESET_USE_HTTPS = os.getenv('PASSWORD_RESET_USE_HTTPS', 'false').lower() == 'true'
 
 
 # Application definition

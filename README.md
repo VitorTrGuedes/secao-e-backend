@@ -105,6 +105,9 @@ code
 Env
 SECRET_KEY=sua-chave-secreta-local-aqui
 DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+PASSWORD_RESET_DOMAIN=localhost:8000
+PASSWORD_RESET_USE_HTTPS=False
 
 
 5. Executar as Migrações do Banco de Dados
