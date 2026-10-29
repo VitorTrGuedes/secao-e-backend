@@ -148,6 +148,30 @@ class ArticleAPITest(APITestCase):
         self.assertEqual(response.data['title'], "Review: Attack on Titan")
         self.assertEqual(response.data['comments'][0]['opinion'], 'Tatakae!')
 
+    def test_oculta_noticia_automatica_com_mais_de_uma_semana(self):
+        antiga = Article.objects.create(
+            title='Notícia automática antiga',
+            slug='noticia-automatica-antiga-api',
+            author='Redação Seção E',
+            category='cinema',
+            post_type='news',
+            content='Conteúdo antigo',
+        )
+        antiga.created_at = timezone.now() - timedelta(days=8)
+        antiga.save(update_fields=['created_at'])
+
+        response = self.client.get('/api/articles/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [article['slug'] for article in response.data],
+            [self.article.slug],
+        )
+        detail_response = self.client.get(
+            f'/api/articles/{antiga.slug}/'
+        )
+        self.assertEqual(detail_response.status_code, status.HTTP_404_NOT_FOUND)
+
 
 class BuscarNoticiasCommandTest(APITestCase):
     @patch(

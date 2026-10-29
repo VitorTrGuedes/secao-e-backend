@@ -36,15 +36,24 @@ class PostThrottle(AnonRateThrottle):
 
 
 class ArticleViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Article.objects.prefetch_related(
-        Prefetch(
-            'comments',
-            queryset=Comment.objects.filter(is_approved=True),
-            to_attr='approved_comments',
-        )
-    ).order_by('-created_at')
+    queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     lookup_field = 'slug'
+
+    def get_queryset(self):
+        limite_retencao = timezone.now() - timedelta(days=7)
+        return Article.objects.exclude(
+            author='Redação Seção E',
+            post_type='news',
+            created_at__lt=limite_retencao,
+        ).prefetch_related(
+            Prefetch(
+                'comments',
+                queryset=Comment.objects.filter(is_approved=True),
+                to_attr='approved_comments',
+            )
+        ).order_by('-created_at')
+
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
