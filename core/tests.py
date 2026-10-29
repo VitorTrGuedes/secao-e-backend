@@ -152,6 +152,48 @@ class ArticleAPITest(APITestCase):
 class BuscarNoticiasCommandTest(APITestCase):
     @patch(
         'core.management.commands.buscar_noticias.FEEDS',
+        [],
+    )
+    def test_remove_noticias_automaticas_com_mais_de_uma_semana(self):
+        antiga = Article.objects.create(
+            title='Notícia automática antiga',
+            slug='noticia-automatica-antiga',
+            author='Redação Seção E',
+            category='cinema',
+            post_type='news',
+            content='Conteúdo antigo',
+        )
+        antiga.created_at = timezone.now() - timedelta(days=8)
+        antiga.save(update_fields=['created_at'])
+
+        manual = Article.objects.create(
+            title='Notícia manual antiga',
+            slug='noticia-manual-antiga',
+            author='Outro autor',
+            category='cinema',
+            post_type='news',
+            content='Conteúdo manual',
+        )
+        manual.created_at = timezone.now() - timedelta(days=8)
+        manual.save(update_fields=['created_at'])
+
+        recente = Article.objects.create(
+            title='Notícia automática recente',
+            slug='noticia-automatica-recente',
+            author='Redação Seção E',
+            category='cinema',
+            post_type='news',
+            content='Conteúdo recente',
+        )
+
+        call_command('buscar_noticias')
+
+        self.assertFalse(Article.objects.filter(pk=antiga.pk).exists())
+        self.assertTrue(Article.objects.filter(pk=manual.pk).exists())
+        self.assertTrue(Article.objects.filter(pk=recente.pk).exists())
+
+    @patch(
+        'core.management.commands.buscar_noticias.FEEDS',
         [{
             'url': 'https://example.com/feed.xml',
             'category': 'cinema',

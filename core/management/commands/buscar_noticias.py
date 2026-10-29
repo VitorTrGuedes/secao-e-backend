@@ -1,5 +1,8 @@
 import feedparser
+from datetime import timedelta
+
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
 from django.utils.text import slugify
 import urllib.error
 import urllib.request
@@ -31,6 +34,8 @@ PALAVRAS_CHAVE_SERIES = [
     'netflix', 'hbo', 'max', 'prime video', 'disney+', 'apple tv',
     'showrunner', 'sitcom', 'spin-off', 'minissérie', 'minisserie'
 ]
+
+NOTICIAS_RETIDAS_DIAS = 7
 
 
 def _entry_value(entry, key, default=None):
@@ -112,6 +117,18 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         self.stdout.write("Iniciando Varredura de notícias...")
+        limite_retencao = timezone.now() - timedelta(days=NOTICIAS_RETIDAS_DIAS)
+        noticias_expiradas, _ = Article.objects.filter(
+            author="Redação Seção E",
+            post_type="news",
+            created_at__lt=limite_retencao,
+        ).delete()
+        if noticias_expiradas:
+            self.stdout.write(
+                f"{noticias_expiradas} notícia(s) automática(s) removida(s) "
+                f"por exceder {NOTICIAS_RETIDAS_DIAS} dias."
+            )
+
         total_novas = 0
         total_atualizadas = 0
         feeds_consultados = 0
