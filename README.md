@@ -109,6 +109,9 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 PASSWORD_RESET_DOMAIN=localhost:8000
 PASSWORD_RESET_USE_HTTPS=False
 
+No Render, o hostname da aplicação é incluído automaticamente por meio da variável
+`RENDER_EXTERNAL_HOSTNAME`. Para um domínio personalizado, adicione-o à variável
+`ALLOWED_HOSTS`, separado por vírgulas.
 
 5. Executar as Migrações do Banco de Dados
 code
