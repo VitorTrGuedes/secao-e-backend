@@ -34,4 +34,5 @@ jobs:
       - name: Importar notícias dos feeds RSS
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY || 'ci-only-secret-key-for-rss-import' }}
         run: python manage.py buscar_noticias
