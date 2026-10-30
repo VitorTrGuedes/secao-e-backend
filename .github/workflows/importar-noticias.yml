@@ -31,6 +31,9 @@ jobs:
             exit 1
           fi
 
+      - name: Configurar chave temporária do Django
+        run: echo "SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(50))')" >> "$GITHUB_ENV"
+
       - name: Importar notícias dos feeds RSS
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
