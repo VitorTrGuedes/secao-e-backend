@@ -4,7 +4,8 @@ from django.db import models
 
 CATEGORY_CHOICES = (('cinema', 'Cinema'), 
                     ('anime', 'Anime'),
-                    ('serie', 'Série')
+                    ('serie', 'Série'),
+                    ('games', 'Games')
 )
 
 class Article(models.Model):

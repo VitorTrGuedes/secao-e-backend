@@ -251,6 +251,29 @@ class BuscarNoticiasCommandTest(APITestCase):
 
     @patch(
         'core.management.commands.buscar_noticias.FEEDS',
+        [{'url': 'https://example.com/games.xml', 'category': 'games'}],
+    )
+    @patch('core.management.commands.buscar_noticias.urllib.request.urlopen')
+    @patch('core.management.commands.buscar_noticias.feedparser.parse')
+    def test_importa_noticia_na_categoria_games(self, parse_feed, urlopen):
+        urlopen.return_value = BytesIO(b'<rss/>')
+        parse_feed.return_value = SimpleNamespace(entries=[
+            SimpleNamespace(
+                title='Novo jogo para PlayStation',
+                summary='Notícia sobre games',
+                link='https://example.com/games/1',
+            ),
+        ])
+
+        call_command('buscar_noticias')
+
+        self.assertEqual(
+            Article.objects.get(title='Novo jogo para PlayStation').category,
+            'games',
+        )
+
+    @patch(
+        'core.management.commands.buscar_noticias.FEEDS',
         [{'url': 'https://example.com/feed.xml', 'category': 'cinema'}],
     )
     @patch('core.management.commands.buscar_noticias.urllib.request.urlopen')

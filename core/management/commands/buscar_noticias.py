@@ -35,6 +35,12 @@ PALAVRAS_CHAVE_SERIES = [
     'showrunner', 'sitcom', 'spin-off', 'minissérie', 'minisserie'
 ]
 
+PALAVRAS_CHAVE_GAMES = [
+    'game', 'games', 'jogo', 'jogos', 'videogame', 'video game',
+    'playstation', 'xbox', 'nintendo', 'steam', 'pc gamer',
+    'playstation 5', 'ps5', 'xbox series', 'switch',
+]
+
 NOTICIAS_RETIDAS_DIAS = 7
 
 
@@ -183,6 +189,10 @@ class Command(BaseCommand):
 
                 if source['category'] == 'anime':
                     categoria = 'anime'
+                elif source['category'] == 'games' or any(
+                    termo in texto_completo for termo in PALAVRAS_CHAVE_GAMES
+                ):
+                    categoria = 'games'
                 elif any(termo in texto_completo for termo in PALAVRAS_CHAVE_SERIES):
                     categoria = 'serie'
                 else:
