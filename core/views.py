@@ -221,7 +221,7 @@ class SuggestionViewSet(viewsets.ModelViewSet):
             sent_count = send_mail(
                 subject=f'Nova sugestão de crítica: {suggestion.title_suggested}',
                 message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
+                from_email=settings.SUGGESTIONS_FROM_EMAIL,
                 recipient_list=[settings.SUGGESTIONS_EMAIL],
                 fail_silently=False,
             )

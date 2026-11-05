@@ -543,6 +543,10 @@ class SuggestionAPITest(APITestCase):
             send_mail_mock.call_args.kwargs['recipient_list'],
             ['secao.e.br@gmail.com'],
         )
+        self.assertEqual(
+            send_mail_mock.call_args.kwargs['from_email'],
+            'onboarding@resend.dev',
+        )
 
     @patch('core.views.send_mail', side_effect=RuntimeError('Email provider unavailable'))
     def test_falha_de_envio_nao_salva_sugestao(self, send_mail_mock):
