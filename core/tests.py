@@ -526,7 +526,9 @@ class SuggestionAPITest(APITestCase):
     def setUp(self):
         SimpleRateThrottle.cache.clear()
 
-    def test_criar_sugestao_valida(self):
+    @patch('core.views.send_mail', return_value=1)
+    @override_settings(SUGGESTIONS_EMAIL='secao.e.br@gmail.com')
+    def test_criar_sugestao_valida(self, send_mail_mock):
         payload = {
             "author_name": "OtakuGirl",
             "title_suggested": "Demon Slayer Hashira Arc",
@@ -535,4 +537,24 @@ class SuggestionAPITest(APITestCase):
         }
         response = self.client.post('/api/suggestions/', payload)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Suggestion.objects.count(), 1)
+        send_mail_mock.assert_called_once()
+        self.assertEqual(
+            send_mail_mock.call_args.kwargs['recipient_list'],
+            ['secao.e.br@gmail.com'],
+        )
+
+    @patch('core.views.send_mail', side_effect=RuntimeError('Email provider unavailable'))
+    def test_falha_de_envio_nao_salva_sugestao(self, send_mail_mock):
+        with self.assertLogs('core.views', level='ERROR'):
+            response = self.client.post('/api/suggestions/', {
+                'author_name': 'OtakuGirl',
+                'title_suggested': 'Demon Slayer Hashira Arc',
+                'category': 'anime',
+                'reason': 'Quero ver sua nota para essa temporada',
+            })
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(Suggestion.objects.count(), 0)
+        send_mail_mock.assert_called_once()
         

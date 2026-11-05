@@ -165,6 +165,7 @@ DATABASE_URL (URL interna do PostgreSQL)
 CORS_ALLOWED_ORIGINS (URL do frontend na Vercel)
 FRONTEND_URL (URL pública do frontend, usada no link de confirmação de comentários)
 RESEND_API_KEY (chave da API do Resend para enviar os e-mails de confirmação)
+SUGGESTIONS_EMAIL (destinatário das sugestões de crítica; padrão: secao.e.br@gmail.com)
 
 O remetente definido em `DEFAULT_FROM_EMAIL` também precisa estar verificado no Resend.
 

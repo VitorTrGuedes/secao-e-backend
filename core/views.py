@@ -32,6 +32,11 @@ class EmailDeliveryUnavailable(APIException):
     default_detail = 'Não foi possível enviar o e-mail de confirmação. Tente novamente mais tarde.'
 
 
+class SuggestionDeliveryUnavailable(APIException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = 'Não foi possível encaminhar a sugestão. Tente novamente mais tarde.'
+
+
 class PostThrottle(AnonRateThrottle):
     rate = '5/minute'
 
@@ -197,3 +202,38 @@ class SuggestionViewSet(viewsets.ModelViewSet):
     serializer_class = SuggestionSerializer
     throttle_classes = [PostThrottle]
     http_method_names = ['post']
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        suggestion = serializer.save()
+        message = (
+            f'Nova sugestão de crítica recebida pelo site Seção E.\n\n'
+            f'Nome: {suggestion.author_name}\n'
+            f'Título sugerido: {suggestion.title_suggested}\n'
+            f'Categoria: {suggestion.category}\n\n'
+            f'Motivo:\n{suggestion.reason}\n\n'
+            f'Recebida em: {suggestion.created_at:%d/%m/%Y %H:%M} UTC'
+        )
+
+        try:
+            sent_count = send_mail(
+                subject=f'Nova sugestão de crítica: {suggestion.title_suggested}',
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[settings.SUGGESTIONS_EMAIL],
+                fail_silently=False,
+            )
+        except Exception as error:
+            logger.exception('Falha ao encaminhar sugestão de crítica por e-mail.')
+            raise SuggestionDeliveryUnavailable() from error
+
+        if sent_count != 1:
+            logger.error('O serviço de e-mail não aceitou a sugestão de crítica.')
+            raise SuggestionDeliveryUnavailable()
+
+        return Response(
+            {'detail': 'Sugestão enviada com sucesso.'},
+            status=status.HTTP_201_CREATED,
+        )
