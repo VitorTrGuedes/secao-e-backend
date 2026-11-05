@@ -16,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 from .models import Article, Comment, Suggestion
+from .ratings import RatingsServiceError, RatingsTitleNotFoundError, get_movie_ratings
 from .serializers import (
     ArticleSerializer,
     CommentConfirmationSerializer,
@@ -53,6 +54,40 @@ class ArticleViewSet(viewsets.ReadOnlyModelViewSet):
                 to_attr='approved_comments',
             )
         ).order_by('-created_at')
+
+
+class MovieRatingsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        title = request.query_params.get('title', '').strip()
+        if not title:
+            return Response(
+                {'detail': 'Informe o título do filme no parâmetro title.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if len(title) > 200:
+            return Response(
+                {'detail': 'O título deve ter no máximo 200 caracteres.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            rating = get_movie_ratings(title)
+        except RatingsTitleNotFoundError as error:
+            return Response({'detail': str(error)}, status=status.HTTP_404_NOT_FOUND)
+        except RatingsServiceError as error:
+            return Response({'detail': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        return Response({
+            'title': rating.title,
+            'year': rating.year,
+            'imdb_id': rating.imdb_id or None,
+            'imdb_rating': float(rating.imdb_rating) if rating.imdb_rating is not None else None,
+            'imdb_votes': rating.imdb_votes,
+            'rotten_tomatoes_rating': rating.rotten_tomatoes_rating,
+            'fetched_at': rating.fetched_at,
+        })
 
 
 class CommentViewSet(viewsets.ModelViewSet):

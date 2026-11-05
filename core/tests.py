@@ -16,7 +16,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework.throttling import SimpleRateThrottle
 from .content import extract_article_content
-from .models import Article, Comment, Suggestion
+from .models import Article, Comment, MovieRatingCache, Suggestion
 
 # Create your tests here.
 class ArticleAPITest(APITestCase):
@@ -171,6 +171,42 @@ class ArticleAPITest(APITestCase):
             f'/api/articles/{antiga.slug}/'
         )
         self.assertEqual(detail_response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class MovieRatingsAPITest(APITestCase):
+    @override_settings(OMDB_API_KEY='test-key')
+    @patch('core.ratings.requests.get')
+    def test_consulta_e_armazena_notas_externas(self, mock_get):
+        response_data = {
+            'Response': 'True',
+            'Title': 'Inception',
+            'Year': '2010',
+            'imdbID': 'tt1375666',
+            'imdbRating': '8.8',
+            'imdbVotes': '2,600,000',
+            'Ratings': [
+                {'Source': 'Rotten Tomatoes', 'Value': '87%'},
+            ],
+        }
+        mock_get.return_value.raise_for_status.return_value = None
+        mock_get.return_value.json.return_value = response_data
+
+        response = self.client.get('/api/ratings/?title=Inception')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['imdb_rating'], 8.8)
+        self.assertEqual(response.data['imdb_votes'], 2600000)
+        self.assertEqual(response.data['rotten_tomatoes_rating'], 87)
+        self.assertEqual(MovieRatingCache.objects.count(), 1)
+
+        cached_response = self.client.get('/api/ratings/?title=inception')
+        self.assertEqual(cached_response.status_code, status.HTTP_200_OK)
+        mock_get.assert_called_once()
+
+    def test_rejeita_consulta_sem_titulo(self):
+        response = self.client.get('/api/ratings/')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class BuscarNoticiasCommandTest(APITestCase):

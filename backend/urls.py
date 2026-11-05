@@ -10,6 +10,7 @@ from core.views import (
     CommentViewSet,
     ConfirmCommentEmailView,
     SuggestionViewSet,
+    MovieRatingsView,
 )
 from django_otp.admin import OTPAdminSite
 #admin.site.__class__ = OTPAdminSite
@@ -48,5 +49,6 @@ urlpatterns = [
     # Painel Administrativo
     path('admin/', admin.site.urls),
     path('api/comments/confirm/', ConfirmCommentEmailView.as_view(), name='comment-email-confirmation'),
+    path('api/ratings/', MovieRatingsView.as_view(), name='movie-ratings'),
     path('api/', include(router.urls)) # Liga todas as rotas da API no prefixo /api/
 ]

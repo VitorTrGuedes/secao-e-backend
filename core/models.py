@@ -41,3 +41,17 @@ class Suggestion(models.Model):
     category = models.TextField()
     reason = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class MovieRatingCache(models.Model):
+    query = models.CharField(max_length=200, unique=True)
+    title = models.CharField(max_length=200)
+    year = models.CharField(max_length=20, blank=True)
+    imdb_id = models.CharField(max_length=20, blank=True)
+    imdb_rating = models.DecimalField(max_digits=3, decimal_places=1, null=True, blank=True)
+    imdb_votes = models.PositiveIntegerField(null=True, blank=True)
+    rotten_tomatoes_rating = models.PositiveSmallIntegerField(null=True, blank=True)
+    fetched_at = models.DateTimeField()
+
+    def __str__(self):
+        return self.title

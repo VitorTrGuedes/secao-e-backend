@@ -60,6 +60,7 @@ Após uma execução bem-sucedida, a API passa a servir as notícias importadas.
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/articles/` | Lista todas as notícias e análises publicadas | Pública |
 | `GET` | `/api/articles/{slug}/` | Detalhes de um post específico + comentários aprovados | Pública |
+| `GET` | `/api/ratings/?title=Inception` | Consulta avaliações IMDb e Tomatometer do Rotten Tomatoes via OMDb | Pública |
 | `POST` | `/api/comments/` | Envia comentário para o e-mail informado confirmar (Rate Limit: 5/min) | Pública |
 | `POST` | `/api/comments/confirm/` | Confirma o e-mail e publica o comentário; link válido por 24 horas e uso único | Pública |
 | `POST` | `/api/suggestions/` | Envio de sugestão de próxima crítica (Rate Limit: 5/min) | Pública |
@@ -67,6 +68,8 @@ Após uma execução bem-sucedida, a API passa a servir as notícias importadas.
 | `GET/POST` | `/recuperar-senha/` | Fluxo de recuperação de senha por e-mail | Pública |
 
 Comentários novos só aparecem depois da confirmação do e-mail. O endereço fica privado, não é incluído nas respostas públicas da API e pode ser consultado no painel administrativo. No `/admin/`, filtre comentários por status, desmarque `is_approved` para ocultá-los ou use a ação de exclusão para removê-los.
+
+Para habilitar `/api/ratings/`, configure `OMDB_API_KEY` no ambiente. As consultas bem-sucedidas ficam em cache por 24 horas; esse período pode ser alterado com `OMDB_CACHE_TTL_HOURS`. A resposta contém `imdb_rating`, `imdb_votes` e `rotten_tomatoes_rating` (ou `null` quando a fonte não disponibilizar a nota).
 
 ---
 
@@ -109,6 +112,7 @@ DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 PASSWORD_RESET_DOMAIN=localhost:8000
 PASSWORD_RESET_USE_HTTPS=False
+OMDB_API_KEY=sua-chave-omdb
 
 No Render, o hostname da aplicação é incluído automaticamente por meio da variável
 `RENDER_EXTERNAL_HOSTNAME`. Para um domínio personalizado, adicione-o à variável
