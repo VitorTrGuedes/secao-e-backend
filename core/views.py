@@ -217,17 +217,31 @@ class SuggestionViewSet(viewsets.ModelViewSet):
             f'Recebida em: {suggestion.created_at:%d/%m/%Y %H:%M} UTC'
         )
 
+        subject = f'Nova sugestão de crítica: {suggestion.title_suggested}'
+        sender = settings.SUGGESTIONS_FROM_EMAIL
         try:
             sent_count = send_mail(
-                subject=f'Nova sugestão de crítica: {suggestion.title_suggested}',
+                subject=subject,
                 message=message,
-                from_email=settings.SUGGESTIONS_FROM_EMAIL,
+                from_email=sender,
                 recipient_list=[settings.SUGGESTIONS_EMAIL],
                 fail_silently=False,
             )
         except Exception as error:
-            logger.exception('Falha ao encaminhar sugestão de crítica por e-mail.')
-            raise SuggestionDeliveryUnavailable() from error
+            logger.exception('Falha ao enviar sugestão usando o remetente configurado.')
+            if sender == 'onboarding@resend.dev':
+                raise SuggestionDeliveryUnavailable() from error
+            try:
+                sent_count = send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email='onboarding@resend.dev',
+                    recipient_list=[settings.SUGGESTIONS_EMAIL],
+                    fail_silently=False,
+                )
+            except Exception as fallback_error:
+                logger.exception('Falha ao enviar sugestão usando o remetente de fallback.')
+                raise SuggestionDeliveryUnavailable() from fallback_error
 
         if sent_count != 1:
             logger.error('O serviço de e-mail não aceitou a sugestão de crítica.')

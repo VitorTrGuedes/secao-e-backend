@@ -561,4 +561,21 @@ class SuggestionAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
         self.assertEqual(Suggestion.objects.count(), 0)
         send_mail_mock.assert_called_once()
+
+    @patch('core.views.send_mail', side_effect=[RuntimeError('Invalid sender'), 1])
+    @override_settings(SUGGESTIONS_FROM_EMAIL='suporte@secao-e.com')
+    def test_usa_remetente_de_fallback_quando_remetente_configurado_falha(self, send_mail_mock):
+        response = self.client.post('/api/suggestions/', {
+            'author_name': 'OtakuGirl',
+            'title_suggested': 'Demon Slayer Hashira Arc',
+            'category': 'anime',
+            'reason': 'Quero ver sua nota para essa temporada',
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(send_mail_mock.call_count, 2)
+        self.assertEqual(
+            send_mail_mock.call_args_list[1].kwargs['from_email'],
+            'onboarding@resend.dev',
+        )
         
