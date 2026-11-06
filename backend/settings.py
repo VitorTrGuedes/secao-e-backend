@@ -160,7 +160,10 @@ CORS_ALLOW_ALL_ORIGINS = True
 # EMAIL_HOST_PASSWORD = os.getenv('EMAIL_APP_PASSWORD')
 DEFAULT_FROM_EMAIL = 'Seção E <suporte@secao-e.com>'
 SUGGESTIONS_EMAIL = os.getenv('SUGGESTIONS_EMAIL', 'secao.e.br@gmail.com')
-SUGGESTIONS_FROM_EMAIL = os.getenv('SUGGESTIONS_FROM_EMAIL', 'onboarding@resend.dev')
+SUGGESTIONS_FROM_EMAIL = os.getenv(
+    'SUGGESTIONS_FROM_EMAIL',
+    'Seção E <contato@secao-e.com.br>',
+)
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://secao-e.vercel.app')
 OMDB_API_KEY = os.getenv('OMDB_API_KEY', '')
 OMDB_CACHE_TTL_HOURS = int(os.getenv('OMDB_CACHE_TTL_HOURS', '24'))

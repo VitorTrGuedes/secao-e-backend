@@ -545,7 +545,7 @@ class SuggestionAPITest(APITestCase):
         )
         self.assertEqual(
             send_mail_mock.call_args.kwargs['from_email'],
-            'onboarding@resend.dev',
+            'Seção E <contato@secao-e.com.br>',
         )
 
     @patch('core.views.send_mail', side_effect=RuntimeError('Email provider unavailable'))
@@ -560,7 +560,7 @@ class SuggestionAPITest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
         self.assertEqual(Suggestion.objects.count(), 0)
-        send_mail_mock.assert_called_once()
+        self.assertEqual(send_mail_mock.call_count, 2)
 
     @patch('core.views.send_mail', side_effect=[RuntimeError('Invalid sender'), 1])
     @override_settings(SUGGESTIONS_FROM_EMAIL='suporte@secao-e.com')
