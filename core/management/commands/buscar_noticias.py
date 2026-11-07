@@ -35,10 +35,14 @@ PALAVRAS_CHAVE_SERIES = [
     'showrunner', 'sitcom', 'spin-off', 'minissérie', 'minisserie'
 ]
 
-PALAVRAS_CHAVE_GAMES = [
+PALAVRAS_CHAVE_PRODUTOS = [
+    'celular', 'smartphone', 'galaxy', 'iphone', 'tablet', 'notebook',
+    'computador', 'monitor', 'fone', 'headset', 'teclado', 'mouse',
+    'roteador', 'placa de vídeo', 'placa de video', 'processador',
+    'memória ram', 'memoria ram', 'desconto', 'promoção', 'promocao',
+    'oferta', 'mercado livre', 'amazon', 'varejo', 'lançamento de produto',
     'game', 'games', 'jogo', 'jogos', 'videogame', 'video game',
     'playstation', 'xbox', 'nintendo', 'steam', 'pc gamer',
-    'playstation 5', 'ps5', 'xbox series', 'switch',
 ]
 
 NOTICIAS_RETIDAS_DIAS = 7
@@ -129,6 +133,22 @@ class Command(BaseCommand):
             post_type="news",
             created_at__lt=limite_retencao,
         ).delete()
+        fora_do_escopo = Article.objects.filter(
+            author="Redação Seção E",
+            post_type="news",
+        )
+        produtos_existentes = 0
+        for article in fora_do_escopo:
+            texto = f'{article.title} {article.content}'.lower()
+            if article.category == 'games' or any(
+                termo in texto for termo in PALAVRAS_CHAVE_PRODUTOS
+            ):
+                article.delete()
+                produtos_existentes += 1
+        if produtos_existentes:
+            self.stdout.write(
+                f"{produtos_existentes} notícia(s) fora do escopo removida(s)."
+            )
         if noticias_expiradas:
             self.stdout.write(
                 f"{noticias_expiradas} notícia(s) automática(s) removida(s) "
@@ -187,12 +207,11 @@ class Command(BaseCommand):
                     texto_limpo, summary_image = extract_article_content(summary)
                 texto_completo = f"{title} {texto_limpo}".lower()
 
+                if any(termo in texto_completo for termo in PALAVRAS_CHAVE_PRODUTOS):
+                    continue
+
                 if source['category'] == 'anime':
                     categoria = 'anime'
-                elif source['category'] == 'games' or any(
-                    termo in texto_completo for termo in PALAVRAS_CHAVE_GAMES
-                ):
-                    categoria = 'games'
                 elif any(termo in texto_completo for termo in PALAVRAS_CHAVE_SERIES):
                     categoria = 'serie'
                 else:

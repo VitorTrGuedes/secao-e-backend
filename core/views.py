@@ -4,7 +4,7 @@ import secrets
 from datetime import timedelta
 from urllib.parse import urlencode
 
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db import transaction
@@ -52,6 +52,8 @@ class ArticleViewSet(viewsets.ReadOnlyModelViewSet):
             author='Redação Seção E',
             post_type='news',
             created_at__lt=limite_retencao,
+        ).filter(
+            Q(post_type='review') | Q(category__in=['cinema', 'anime', 'serie'])
         ).prefetch_related(
             Prefetch(
                 'comments',

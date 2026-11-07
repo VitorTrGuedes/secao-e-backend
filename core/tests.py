@@ -291,7 +291,7 @@ class BuscarNoticiasCommandTest(APITestCase):
     )
     @patch('core.management.commands.buscar_noticias.urllib.request.urlopen')
     @patch('core.management.commands.buscar_noticias.feedparser.parse')
-    def test_importa_noticia_na_categoria_games(self, parse_feed, urlopen):
+    def test_ignora_noticia_de_games(self, parse_feed, urlopen):
         urlopen.return_value = BytesIO(b'<rss/>')
         parse_feed.return_value = SimpleNamespace(entries=[
             SimpleNamespace(
@@ -303,10 +303,7 @@ class BuscarNoticiasCommandTest(APITestCase):
 
         call_command('buscar_noticias')
 
-        self.assertEqual(
-            Article.objects.get(title='Novo jogo para PlayStation').category,
-            'games',
-        )
+        self.assertFalse(Article.objects.filter(title='Novo jogo para PlayStation').exists())
 
     @patch(
         'core.management.commands.buscar_noticias.FEEDS',
