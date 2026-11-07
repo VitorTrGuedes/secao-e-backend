@@ -11,6 +11,11 @@ CATEGORY_CHOICES = (('cinema', 'Cinema'),
 class Article(models.Model):
     TYPE_CHOICES = (('news', 'Notícia'), ('review', 'Crítica'))
     title = models.CharField(max_length=200)
+    ratings_title = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text='Título original usado para buscar notas no IMDb e Rotten Tomatoes.',
+    )
     slug = models.SlugField(unique=True)
     author = models.CharField(max_length=100, default='Kallavan', verbose_name="Autor")
     category = models.CharField(max_length=10, choices=CATEGORY_CHOICES)
