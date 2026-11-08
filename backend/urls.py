@@ -11,6 +11,7 @@ from core.views import (
     ConfirmCommentEmailView,
     SuggestionViewSet,
     MovieRatingsView,
+    StreamingAvailabilityView,
 )
 from django_otp.admin import OTPAdminSite
 #admin.site.__class__ = OTPAdminSite
@@ -50,5 +51,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/comments/confirm/', ConfirmCommentEmailView.as_view(), name='comment-email-confirmation'),
     path('api/ratings/', MovieRatingsView.as_view(), name='movie-ratings'),
+    path('api/streaming/', StreamingAvailabilityView.as_view(), name='streaming-availability'),
     path('api/', include(router.urls)) # Liga todas as rotas da API no prefixo /api/
 ]

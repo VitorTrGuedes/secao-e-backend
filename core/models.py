@@ -60,3 +60,15 @@ class MovieRatingCache(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class StreamingAvailabilityCache(models.Model):
+    query = models.CharField(max_length=200, unique=True)
+    title = models.CharField(max_length=200)
+    year = models.CharField(max_length=4, blank=True)
+    tmdb_id = models.PositiveIntegerField()
+    providers = models.JSONField(default=list)
+    fetched_at = models.DateTimeField()
+
+    def __str__(self):
+        return self.title

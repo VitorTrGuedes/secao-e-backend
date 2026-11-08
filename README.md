@@ -63,6 +63,7 @@ Após uma execução bem-sucedida, a API passa a servir as notícias importadas.
 | `GET` | `/api/articles/` | Lista todas as notícias e análises publicadas | Pública |
 | `GET` | `/api/articles/{slug}/` | Detalhes de um post específico + comentários aprovados | Pública |
 | `GET` | `/api/ratings/?title=Inception` | Consulta avaliações IMDb e Tomatometer do Rotten Tomatoes via OMDb | Pública |
+| `GET` | `/api/streaming/?title=Inception` | Consulta serviços de streaming disponíveis no Brasil via TMDB | Pública |
 | `POST` | `/api/comments/` | Envia comentário para o e-mail informado confirmar (Rate Limit: 5/min) | Pública |
 | `POST` | `/api/comments/confirm/` | Confirma o e-mail e publica o comentário; link válido por 24 horas e uso único | Pública |
 | `POST` | `/api/suggestions/` | Envio de sugestão de próxima crítica (Rate Limit: 5/min) | Pública |
@@ -72,6 +73,8 @@ Após uma execução bem-sucedida, a API passa a servir as notícias importadas.
 Comentários novos só aparecem depois da confirmação do e-mail. O endereço fica privado, não é incluído nas respostas públicas da API e pode ser consultado no painel administrativo. No `/admin/`, filtre comentários por status, desmarque `is_approved` para ocultá-los ou use a ação de exclusão para removê-los.
 
 Para habilitar `/api/ratings/`, configure `OMDB_API_KEY` no ambiente. As consultas bem-sucedidas ficam em cache por 24 horas; esse período pode ser alterado com `OMDB_CACHE_TTL_HOURS`. A resposta contém `imdb_rating`, `imdb_votes` e `rotten_tomatoes_rating` (ou `null` quando a fonte não disponibilizar a nota).
+
+Para habilitar `/api/streaming/`, configure `TMDB_API_KEY` no ambiente. A busca usa a região `BR`, retorna os serviços de assinatura, gratuitos, com anúncios, aluguel e compra, e mantém os resultados em cache por 24 horas. Esse período pode ser alterado com `TMDB_CACHE_TTL_HOURS`.
 
 ---
 
@@ -115,6 +118,7 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 PASSWORD_RESET_DOMAIN=localhost:8000
 PASSWORD_RESET_USE_HTTPS=False
 OMDB_API_KEY=sua-chave-omdb
+TMDB_API_KEY=sua-chave-tmdb
 
 No Render, o hostname da aplicação é incluído automaticamente por meio da variável
 `RENDER_EXTERNAL_HOSTNAME`. Para um domínio personalizado, adicione-o à variável
@@ -169,6 +173,8 @@ FRONTEND_URL (URL pública do frontend, usada no link de confirmação de coment
 RESEND_API_KEY (chave da API do Resend para enviar os e-mails de confirmação)
 SUGGESTIONS_EMAIL (destinatário das sugestões de crítica; padrão: secao.e.br@gmail.com)
 SUGGESTIONS_FROM_EMAIL (remetente das sugestões; padrão: Seção E <contato@secao-e.com.br>)
+TMDB_API_KEY (chave da API do TMDB para consultar disponibilidade em streaming)
+TMDB_CACHE_TTL_HOURS (validade do cache de streaming; padrão: 24)
 
 O remetente definido em `DEFAULT_FROM_EMAIL` também precisa estar verificado no Resend.
 

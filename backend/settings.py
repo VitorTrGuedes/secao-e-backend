@@ -167,3 +167,5 @@ SUGGESTIONS_FROM_EMAIL = os.getenv(
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://secao-e.vercel.app')
 OMDB_API_KEY = os.getenv('OMDB_API_KEY', '')
 OMDB_CACHE_TTL_HOURS = int(os.getenv('OMDB_CACHE_TTL_HOURS', '24'))
+TMDB_API_KEY = os.getenv('TMDB_API_KEY', '')
+TMDB_CACHE_TTL_HOURS = int(os.getenv('TMDB_CACHE_TTL_HOURS', '24'))

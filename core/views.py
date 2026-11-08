@@ -17,6 +17,11 @@ from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 from .models import Article, Comment, Suggestion
 from .ratings import RatingsServiceError, RatingsTitleNotFoundError, get_movie_ratings
+from .streaming import (
+    StreamingServiceError,
+    StreamingTitleNotFoundError,
+    get_streaming_availability,
+)
 from .serializers import (
     ArticleSerializer,
     CommentConfirmationSerializer,
@@ -94,6 +99,37 @@ class MovieRatingsView(APIView):
             'imdb_votes': rating.imdb_votes,
             'rotten_tomatoes_rating': rating.rotten_tomatoes_rating,
             'fetched_at': rating.fetched_at,
+        })
+
+
+class StreamingAvailabilityView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        title = request.query_params.get('title', '').strip()
+        if not title:
+            return Response(
+                {'detail': 'Informe o título do filme.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if len(title) > 200:
+            return Response(
+                {'detail': 'O título deve ter no máximo 200 caracteres.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            movie = get_streaming_availability(title)
+        except StreamingTitleNotFoundError as error:
+            return Response({'detail': str(error)}, status=status.HTTP_404_NOT_FOUND)
+        except StreamingServiceError as error:
+            return Response({'detail': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        return Response({
+            'title': movie.title,
+            'year': movie.year,
+            'tmdb_id': movie.tmdb_id,
+            'providers': movie.providers,
         })
 
 

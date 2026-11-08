@@ -16,7 +16,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework.throttling import SimpleRateThrottle
 from .content import extract_article_content
-from .models import Article, Comment, MovieRatingCache, Suggestion
+from .models import Article, Comment, MovieRatingCache, StreamingAvailabilityCache, Suggestion
 
 # Create your tests here.
 class ArticleAPITest(APITestCase):
@@ -171,6 +171,57 @@ class ArticleAPITest(APITestCase):
             f'/api/articles/{antiga.slug}/'
         )
         self.assertEqual(detail_response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class StreamingAvailabilityAPITest(APITestCase):
+    @override_settings(TMDB_API_KEY='test-key')
+    @patch('core.streaming.requests.get')
+    def test_consulta_e_armazena_servicos_de_streaming(self, mock_get):
+        search_response = {
+            'results': [{
+                'id': 123,
+                'title': 'The Batman',
+                'release_date': '2022-03-01',
+            }],
+        }
+        providers_response = {
+            'results': {
+                'BR': {
+                    'flatrate': [
+                        {'provider_id': 8, 'provider_name': 'Netflix', 'logo_path': '/netflix.jpg'},
+                    ],
+                    'rent': [
+                        {'provider_id': 8, 'provider_name': 'Netflix', 'logo_path': '/netflix.jpg'},
+                    ],
+                },
+            },
+        }
+        mock_get.side_effect = [
+            SimpleNamespace(
+                raise_for_status=lambda: None,
+                json=lambda: search_response,
+            ),
+            SimpleNamespace(
+                raise_for_status=lambda: None,
+                json=lambda: providers_response,
+            ),
+        ]
+
+        response = self.client.get('/api/streaming/?title=The%20Batman')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['providers'][0]['name'], 'Netflix')
+        self.assertEqual(StreamingAvailabilityCache.objects.count(), 1)
+        self.assertEqual(mock_get.call_count, 2)
+
+        cached_response = self.client.get('/api/streaming/?title=the%20batman')
+        self.assertEqual(cached_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(mock_get.call_count, 2)
+
+    def test_rejeita_busca_de_streaming_sem_titulo(self):
+        response = self.client.get('/api/streaming/')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class MovieRatingsAPITest(APITestCase):
