@@ -25,6 +25,7 @@ from .streaming import (
 from .serializers import (
     ArticleSerializer,
     CommentConfirmationSerializer,
+    CommentDeletionSerializer,
     CommentSerializer,
     SuggestionSerializer,
 )
@@ -147,17 +148,32 @@ class CommentViewSet(viewsets.ModelViewSet):
         token = secrets.token_urlsafe(32)
         comment.email_confirmation_token = hashlib.sha256(token.encode()).hexdigest()
         comment.email_confirmation_sent_at = timezone.now()
-        comment.save(update_fields=['email_confirmation_token', 'email_confirmation_sent_at'])
+        deletion_token = secrets.token_urlsafe(32)
+        comment.delete_token_hash = hashlib.sha256(deletion_token.encode()).hexdigest()
+        comment.delete_token_expires_at = timezone.now() + timedelta(days=7)
+        comment.save(update_fields=[
+            'email_confirmation_token',
+            'email_confirmation_sent_at',
+            'delete_token_hash',
+            'delete_token_expires_at',
+        ])
 
         confirmation_url = (
             f"{settings.FRONTEND_URL.rstrip('/')}/confirmar-comentario?"
             f"{urlencode({'token': token})}"
         )
+        deletion_url = (
+            f"{settings.FRONTEND_URL.rstrip('/')}/excluir-comentario?"
+            f"{urlencode({'token': deletion_token})}"
+        )
         message = (
             f"Olá, {comment.author_name}!\n\n"
             "Para confirmar seu e-mail e publicar seu comentário, acesse:\n"
             f"{confirmation_url}\n\n"
-            "O link expira em 24 horas. Se você não enviou este comentário, ignore esta mensagem."
+            "Para excluir este comentário, acesse:\n"
+            f"{deletion_url}\n\n"
+            "O link de confirmação expira em 24 horas e o link de exclusão em 7 dias. "
+            "Se você não enviou este comentário, ignore esta mensagem."
         )
 
         try:
@@ -180,6 +196,33 @@ class CommentViewSet(viewsets.ModelViewSet):
             {'detail': 'Enviamos um link de confirmação para o e-mail informado.'},
             status=status.HTTP_201_CREATED,
         )
+
+
+class DeleteCommentView(APIView):
+    permission_classes = [AllowAny]
+
+    @transaction.atomic
+    def delete(self, request):
+        serializer = CommentDeletionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        token_hash = hashlib.sha256(
+            serializer.validated_data['token'].encode()
+        ).hexdigest()
+        comment = Comment.objects.select_for_update().filter(
+            delete_token_hash=token_hash,
+            delete_token_expires_at__gt=timezone.now(),
+        ).first()
+        if comment is None:
+            return Response(
+                {'detail': 'Token inválido ou expirado.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        comment.delete_token_hash = ''
+        comment.delete_token_expires_at = None
+        comment.save(update_fields=['delete_token_hash', 'delete_token_expires_at'])
+        comment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ConfirmCommentEmailView(APIView):

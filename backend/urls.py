@@ -9,6 +9,7 @@ from core.views import (
     ArticleViewSet,
     CommentViewSet,
     ConfirmCommentEmailView,
+    DeleteCommentView,
     SuggestionViewSet,
     MovieRatingsView,
     StreamingAvailabilityView,
@@ -50,6 +51,7 @@ urlpatterns = [
     # Painel Administrativo
     path('admin/', admin.site.urls),
     path('api/comments/confirm/', ConfirmCommentEmailView.as_view(), name='comment-email-confirmation'),
+    path('api/comments/delete/', DeleteCommentView.as_view(), name='comment-delete'),
     path('api/ratings/', MovieRatingsView.as_view(), name='movie-ratings'),
     path('api/streaming/', StreamingAvailabilityView.as_view(), name='streaming-availability'),
     path('api/', include(router.urls)) # Liga todas as rotas da API no prefixo /api/

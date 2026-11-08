@@ -6,14 +6,22 @@ from .models import Article, Comment, Suggestion
 
 class CommentSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(write_only=True)
+    can_delete = serializers.SerializerMethodField()
+
+    def get_can_delete(self, obj):
+        return False
 
     class Meta:
         model = Comment
-        fields = ['id', 'article', 'author_name', 'email', 'opinion', 'created_at']
+        fields = ['id', 'article', 'author_name', 'email', 'opinion', 'created_at', 'can_delete']
 
 
 class CommentConfirmationSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=128)
+
+
+class CommentDeletionSerializer(serializers.Serializer):
+    token = serializers.CharField(max_length=128, write_only=True, trim_whitespace=True)
 
 
 class ArticleSerializer(serializers.ModelSerializer):

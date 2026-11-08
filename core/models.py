@@ -37,6 +37,8 @@ class Comment(models.Model):
     is_approved = models.BooleanField(default=False)
     email_confirmation_token = models.CharField(max_length=64, blank=True, editable=False)
     email_confirmation_sent_at = models.DateTimeField(null=True, blank=True, editable=False)
+    delete_token_hash = models.CharField(max_length=64, blank=True, editable=False)
+    delete_token_expires_at = models.DateTimeField(null=True, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
 

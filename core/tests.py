@@ -511,6 +511,23 @@ class CommentAPITest(APITestCase):
             content = "Novo filme em produção.",
         )
 
+    def _create_comment(self, author_name='Bruce', email='bruce@example.com'):
+        response = self.client.post('/api/comments/', {
+            'article': self.article.id,
+            'author_name': author_name,
+            'email': email,
+            'opinion': 'Filme promissor',
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return Comment.objects.get(author_name=author_name)
+
+    def _deletion_token(self):
+        deletion_url = next(
+            line for line in mail.outbox[0].body.splitlines()
+            if '/excluir-comentario?' in line
+        )
+        return parse_qs(urlsplit(deletion_url).query)['token'][0]
+
     def test_criar_comentario_valido(self):
         payload = {
             "article": self.article.id,
@@ -521,7 +538,11 @@ class CommentAPITest(APITestCase):
         response = self.client.post('/api/comments/', payload)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertNotIn('email', response.data)
-        self.assertFalse(Comment.objects.get().is_approved)
+        comment = Comment.objects.get()
+        self.assertFalse(comment.is_approved)
+        deletion_token = self._deletion_token()
+        self.assertNotEqual(comment.delete_token_hash, deletion_token)
+        self.assertEqual(len(comment.delete_token_hash), 64)
         self.assertEqual(len(mail.outbox), 1)
 
     def test_comentario_so_aparece_apos_confirmar_email(self):
@@ -551,9 +572,87 @@ class CommentAPITest(APITestCase):
         article_response = self.client.get(f'/api/articles/{self.article.slug}/')
         self.assertEqual(len(article_response.data['comments']), 1)
         self.assertNotIn('email', article_response.data['comments'][0])
+        self.assertFalse(article_response.data['comments'][0]['can_delete'])
+        self.assertNotIn('delete_token_hash', article_response.data['comments'][0])
+        self.assertNotIn(token, article_response.data['comments'][0].values())
 
         reused_token = self.client.post('/api/comments/confirm/', {'token': token})
         self.assertEqual(reused_token.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_token_valido_exclui_somente_o_comentario_correspondente(self):
+        first = self._create_comment()
+        token = self._deletion_token()
+        second = self._create_comment(
+            author_name='Clark',
+            email='clark@example.com',
+        )
+
+        response = self.client.delete(
+            '/api/comments/delete/',
+            {'token': token},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Comment.objects.filter(pk=first.pk).exists())
+        self.assertTrue(Comment.objects.filter(pk=second.pk).exists())
+
+    def test_token_invalido_nao_exclui_comentario(self):
+        comment = self._create_comment()
+
+        response = self.client.delete(
+            '/api/comments/delete/',
+            {'token': 'token-invalido'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(Comment.objects.filter(pk=comment.pk).exists())
+
+    def test_token_expirado_nao_exclui_comentario(self):
+        comment = self._create_comment()
+        comment.delete_token_expires_at = timezone.now() - timedelta(days=1)
+        comment.save(update_fields=['delete_token_expires_at'])
+
+        response = self.client.delete(
+            '/api/comments/delete/',
+            {'token': self._deletion_token()},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertTrue(Comment.objects.filter(pk=comment.pk).exists())
+
+    def test_token_nao_pode_ser_reutilizado(self):
+        comment = self._create_comment()
+        token = self._deletion_token()
+
+        first_response = self.client.delete(
+            '/api/comments/delete/',
+            {'token': token},
+            format='json',
+        )
+        second_response = self.client.delete(
+            '/api/comments/delete/',
+            {'token': token},
+            format='json',
+        )
+
+        self.assertEqual(first_response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(second_response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertFalse(Comment.objects.filter(pk=comment.pk).exists())
+
+    def test_nao_aceita_exclusao_apenas_por_comment_id(self):
+        comment = self._create_comment()
+
+        response = self.client.delete(
+            '/api/comments/delete/',
+            {'comment_id': comment.pk},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(Comment.objects.filter(pk=comment.pk).exists())
 
     def test_rejeita_email_invalido_sem_criar_comentario(self):
         response = self.client.post('/api/comments/', {
