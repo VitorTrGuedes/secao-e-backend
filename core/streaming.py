@@ -90,18 +90,6 @@ def _title_from_cache(cached):
 
 
 def get_streaming_titles(title=''):
-    query = title.strip().lower()
-    if query:
-        cache_expiry = timezone.now() - timedelta(
-            hours=getattr(settings, 'TMDB_CACHE_TTL_HOURS', 24)
-        )
-        cached = StreamingAvailabilityCache.objects.filter(
-            query=query,
-            fetched_at__gte=cache_expiry,
-        ).first()
-        if cached:
-            return [_title_from_cache(cached)]
-
     params = {
         'language': 'pt-BR',
         'region': 'BR',
@@ -128,22 +116,6 @@ def get_streaming_titles(title=''):
         _title_from_result(result, _providers_for(result.get('media_type', 'movie'), result['id']))
         for result in results
     ]
-    if query and titles:
-        first = titles[0]
-        StreamingAvailabilityCache.objects.update_or_create(
-            query=query,
-            defaults={
-                'title': first['title'],
-                'year': first['year'],
-                'tmdb_id': first['tmdb_id'],
-                'media_type': first['media_type'],
-                'overview': first['overview'],
-                'poster_path': first['poster_path'],
-                'release_date': first['release_date'],
-                'providers': first['providers'],
-                'fetched_at': timezone.now(),
-            },
-        )
     return titles
 
 
@@ -165,7 +137,7 @@ def _search_titles(title, params):
             item for item in results
             if item.get('media_type') in ('movie', 'tv')
         ]
-    return results[:10]
+    return results[:20]
 
 
 def get_title_details(title):

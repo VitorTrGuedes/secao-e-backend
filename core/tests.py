@@ -212,12 +212,34 @@ class StreamingAvailabilityAPITest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['providers'][0]['name'], 'Netflix')
-        self.assertEqual(StreamingAvailabilityCache.objects.count(), 1)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(StreamingAvailabilityCache.objects.count(), 0)
         self.assertEqual(mock_get.call_count, 2)
 
-        cached_response = self.client.get('/api/streaming/?title=the%20batman')
-        self.assertEqual(cached_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(mock_get.call_count, 2)
+    @override_settings(TMDB_API_KEY='test-key')
+    @patch('core.streaming.requests.get')
+    def test_busca_retorna_todos_os_titulos_encontrados(self, mock_get):
+        search_response = {
+            'results': [
+                {'id': 1, 'media_type': 'movie', 'title': 'Batman', 'release_date': '1966-01-01'},
+                {'id': 2, 'media_type': 'movie', 'title': 'Batman Begins', 'release_date': '2005-01-01'},
+            ],
+        }
+        provider_response = {'results': {'BR': {'flatrate': []}}}
+        mock_get.side_effect = [
+            SimpleNamespace(raise_for_status=lambda: None, json=lambda: search_response),
+            SimpleNamespace(raise_for_status=lambda: None, json=lambda: provider_response),
+            SimpleNamespace(raise_for_status=lambda: None, json=lambda: provider_response),
+        ]
+
+        response = self.client.get('/api/streaming/?title=batman')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([item['title'] for item in response.data['results']], [
+            'Batman',
+            'Batman Begins',
+        ])
+        self.assertEqual(mock_get.call_count, 3)
 
     @override_settings(TMDB_API_KEY='test-key')
     @patch('core.streaming.requests.get')
