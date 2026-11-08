@@ -67,6 +67,10 @@ class StreamingAvailabilityCache(models.Model):
     title = models.CharField(max_length=200)
     year = models.CharField(max_length=4, blank=True)
     tmdb_id = models.PositiveIntegerField()
+    media_type = models.CharField(max_length=10, default='movie')
+    overview = models.TextField(blank=True)
+    poster_path = models.CharField(max_length=255, blank=True)
+    release_date = models.CharField(max_length=20, blank=True)
     providers = models.JSONField(default=list)
     fetched_at = models.DateTimeField()
 

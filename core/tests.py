@@ -180,6 +180,7 @@ class StreamingAvailabilityAPITest(APITestCase):
         search_response = {
             'results': [{
                 'id': 123,
+                'media_type': 'movie',
                 'title': 'The Batman',
                 'release_date': '2022-03-01',
             }],
@@ -218,10 +219,24 @@ class StreamingAvailabilityAPITest(APITestCase):
         self.assertEqual(cached_response.status_code, status.HTTP_200_OK)
         self.assertEqual(mock_get.call_count, 2)
 
-    def test_rejeita_busca_de_streaming_sem_titulo(self):
+    @override_settings(TMDB_API_KEY='test-key')
+    @patch('core.streaming.requests.get')
+    def test_lista_lancamentos_sem_titulo(self, mock_get):
+        mock_get.side_effect = [
+            SimpleNamespace(
+                raise_for_status=lambda: None,
+                json=lambda: {'results': []},
+            ),
+            SimpleNamespace(
+                raise_for_status=lambda: None,
+                json=lambda: {'results': []},
+            ),
+        ]
+
         response = self.client.get('/api/streaming/')
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {'results': []})
 
 
 class MovieRatingsAPITest(APITestCase):

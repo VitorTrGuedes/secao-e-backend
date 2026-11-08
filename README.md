@@ -63,7 +63,7 @@ Após uma execução bem-sucedida, a API passa a servir as notícias importadas.
 | `GET` | `/api/articles/` | Lista todas as notícias e análises publicadas | Pública |
 | `GET` | `/api/articles/{slug}/` | Detalhes de um post específico + comentários aprovados | Pública |
 | `GET` | `/api/ratings/?title=Inception` | Consulta avaliações IMDb e Tomatometer do Rotten Tomatoes via OMDb | Pública |
-| `GET` | `/api/streaming/?title=Inception` | Consulta serviços de streaming disponíveis no Brasil via TMDB | Pública |
+| `GET` | `/api/streaming/` ou `/api/streaming/?title=Inception` | Lista lançamentos ou busca filmes e séries com serviços de streaming disponíveis no Brasil via TMDB | Pública |
 | `POST` | `/api/comments/` | Envia comentário para o e-mail informado confirmar (Rate Limit: 5/min) | Pública |
 | `POST` | `/api/comments/confirm/` | Confirma o e-mail e publica o comentário; link válido por 24 horas e uso único | Pública |
 | `POST` | `/api/suggestions/` | Envio de sugestão de próxima crítica (Rate Limit: 5/min) | Pública |
