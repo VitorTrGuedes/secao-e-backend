@@ -108,10 +108,7 @@ def get_streaming_titles(title=''):
         'include_adult': 'false',
     }
     if title:
-        results = [
-            item for item in _request_tmdb('search/multi', {**params, 'query': title}).get('results', [])
-            if item.get('media_type') in ('movie', 'tv')
-        ][:10]
+        results = _search_titles(title, params)
     else:
         movies = _request_tmdb(
             'discover/movie',
@@ -148,6 +145,27 @@ def get_streaming_titles(title=''):
             },
         )
     return titles
+
+
+def _search_titles(title, params):
+    results = _request_tmdb(
+        'search/multi',
+        {**params, 'query': title},
+    ).get('results', [])
+    results = [
+        item for item in results
+        if item.get('media_type') in ('movie', 'tv')
+    ]
+    if not results:
+        results = _request_tmdb(
+            'search/multi',
+            {**params, 'language': 'en-US', 'query': title},
+        ).get('results', [])
+        results = [
+            item for item in results
+            if item.get('media_type') in ('movie', 'tv')
+        ]
+    return results[:10]
 
 
 def get_streaming_availability(title):

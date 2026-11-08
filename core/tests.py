@@ -238,6 +238,21 @@ class StreamingAvailabilityAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, {'results': []})
 
+    @override_settings(TMDB_API_KEY='test-key')
+    @patch('core.streaming.requests.get')
+    def test_busca_sem_resultado_retorna_lista_vazia(self, mock_get):
+        empty_response = SimpleNamespace(
+            raise_for_status=lambda: None,
+            json=lambda: {'results': []},
+        )
+        mock_get.side_effect = [empty_response, empty_response]
+
+        response = self.client.get('/api/streaming/?title=nao%20existe')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {'results': []})
+        self.assertEqual(mock_get.call_count, 2)
+
 
 class MovieRatingsAPITest(APITestCase):
     @override_settings(OMDB_API_KEY='test-key')

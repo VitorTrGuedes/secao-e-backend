@@ -120,14 +120,15 @@ class StreamingAvailabilityView(APIView):
 
         try:
             titles = get_streaming_titles(title)
-            if not titles:
-                raise StreamingTitleNotFoundError('Título não encontrado.')
-            result = titles[0]
         except StreamingTitleNotFoundError as error:
             return Response({'detail': str(error)}, status=status.HTTP_404_NOT_FOUND)
         except StreamingServiceError as error:
             return Response({'detail': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
+        if not titles:
+            return Response({'results': []})
+
+        result = titles[0]
         return Response({**result, 'results': titles})
 
 
