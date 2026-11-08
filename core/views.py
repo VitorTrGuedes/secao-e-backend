@@ -20,6 +20,7 @@ from .ratings import RatingsServiceError, RatingsTitleNotFoundError, get_movie_r
 from .streaming import (
     StreamingServiceError,
     StreamingTitleNotFoundError,
+    get_title_details,
     get_streaming_titles,
 )
 from .serializers import (
@@ -132,6 +133,30 @@ class StreamingAvailabilityView(APIView):
 
         result = titles[0]
         return Response({**result, 'results': titles})
+
+
+class TitleDetailsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        title = request.query_params.get('title', '').strip()
+        if not title:
+            return Response(
+                {'detail': 'Informe o título no parâmetro title.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if len(title) > 200:
+            return Response(
+                {'detail': 'O título deve ter no máximo 200 caracteres.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            return Response(get_title_details(title))
+        except StreamingTitleNotFoundError as error:
+            return Response({'detail': str(error)}, status=status.HTTP_404_NOT_FOUND)
+        except StreamingServiceError as error:
+            return Response({'detail': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 class CommentViewSet(viewsets.ModelViewSet):

@@ -253,6 +253,53 @@ class StreamingAvailabilityAPITest(APITestCase):
         self.assertEqual(response.data, {'results': []})
         self.assertEqual(mock_get.call_count, 2)
 
+    @override_settings(TMDB_API_KEY='test-key')
+    @patch('core.streaming.requests.get')
+    def test_consulta_detalhes_e_creditos_do_titulo(self, mock_get):
+        mock_get.side_effect = [
+            SimpleNamespace(
+                raise_for_status=lambda: None,
+                json=lambda: {
+                    'results': [{
+                        'id': 123,
+                        'media_type': 'movie',
+                        'title': 'The Batman',
+                    }],
+                },
+            ),
+            SimpleNamespace(
+                raise_for_status=lambda: None,
+                json=lambda: {
+                    'id': 123,
+                    'title': 'The Batman',
+                    'original_title': 'The Batman',
+                    'release_date': '2022-03-01',
+                    'runtime': 176,
+                    'genres': [{'name': 'Crime'}],
+                    'popularity': 90.5,
+                    'vote_average': 8.0,
+                    'vote_count': 1000,
+                    'credits': {
+                        'crew': [
+                            {'job': 'Director', 'name': 'Matt Reeves'},
+                            {'job': 'Writer', 'name': 'Peter Craig'},
+                        ],
+                        'cast': [{'name': 'Robert Pattinson'}],
+                    },
+                },
+            ),
+        ]
+
+        response = self.client.get('/api/title-details/?title=The%20Batman')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['year'], '2022')
+        self.assertEqual(response.data['runtime'], 176)
+        self.assertEqual(response.data['director'], 'Matt Reeves')
+        self.assertEqual(response.data['writers'], ['Peter Craig'])
+        self.assertEqual(response.data['cast'], ['Robert Pattinson'])
+        self.assertEqual(mock_get.call_count, 2)
+
 
 class MovieRatingsAPITest(APITestCase):
     @override_settings(OMDB_API_KEY='test-key')

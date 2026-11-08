@@ -168,6 +168,64 @@ def _search_titles(title, params):
     return results[:10]
 
 
+def get_title_details(title):
+    params = {
+        'language': 'pt-BR',
+        'region': 'BR',
+        'include_adult': 'false',
+    }
+    results = _search_titles(title, params)
+    result = next(iter(results), None)
+    if not result:
+        raise StreamingTitleNotFoundError('Título não encontrado.')
+
+    media_type = result.get('media_type', 'movie')
+    details = _request_tmdb(
+        f"{media_type}/{result['id']}",
+        {
+            'language': 'pt-BR',
+            'append_to_response': 'credits',
+        },
+    )
+    credits = details.get('credits', {})
+    crew = credits.get('crew', [])
+    directors = [
+        person.get('name') for person in crew
+        if person.get('job') == 'Director' and person.get('name')
+    ]
+    writers = [
+        person.get('name') for person in crew
+        if person.get('job') in {'Writer', 'Screenplay', 'Story'} and person.get('name')
+    ]
+    cast = [
+        person.get('name') for person in credits.get('cast', [])
+        if person.get('name')
+    ][:8]
+    release_date = details.get('release_date') or details.get('first_air_date') or ''
+    runtime = details.get('runtime')
+    if runtime is None:
+        runtimes = details.get('episode_run_time') or []
+        runtime = runtimes[0] if runtimes else None
+
+    return {
+        'id': details.get('id'),
+        'title': details.get('title') or details.get('name') or title,
+        'original_title': details.get('original_title') or details.get('original_name') or '',
+        'media_type': media_type,
+        'year': release_date[:4],
+        'release_date': release_date,
+        'runtime': runtime,
+        'genres': [genre.get('name') for genre in details.get('genres', []) if genre.get('name')],
+        'popularity': details.get('popularity'),
+        'vote_average': details.get('vote_average'),
+        'vote_count': details.get('vote_count'),
+        'director': directors[0] if directors else '',
+        'writers': list(dict.fromkeys(writers))[:4],
+        'cast': cast,
+        'tmdb_url': f"https://www.themoviedb.org/{media_type}/{details.get('id')}",
+    }
+
+
 def get_streaming_availability(title):
     query = title.strip().lower()
     cache_expiry = timezone.now() - timedelta(
