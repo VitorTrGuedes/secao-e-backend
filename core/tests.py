@@ -654,6 +654,30 @@ class CommentAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(Comment.objects.filter(pk=comment.pk).exists())
 
+    def test_solicita_link_de_exclusao_com_email_e_comentario(self):
+        comment = self._create_comment()
+
+        response = self.client.post('/api/comments/delete/', {
+            'comment_id': comment.pk,
+            'email': 'bruce@example.com',
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(len(mail.outbox), 2)
+        self.assertIn('/excluir-comentario?', mail.outbox[1].body)
+
+    def test_solicitacao_com_email_incorreto_tem_resposta_neutra(self):
+        comment = self._create_comment()
+
+        response = self.client.post('/api/comments/delete/', {
+            'comment_id': comment.pk,
+            'email': 'outra@example.com',
+        }, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(Comment.objects.filter(pk=comment.pk).exists())
+
     def test_rejeita_email_invalido_sem_criar_comentario(self):
         response = self.client.post('/api/comments/', {
             'article': self.article.id,

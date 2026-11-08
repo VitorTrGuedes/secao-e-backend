@@ -26,6 +26,7 @@ from .serializers import (
     ArticleSerializer,
     CommentConfirmationSerializer,
     CommentDeletionSerializer,
+    CommentDeletionRequestSerializer,
     CommentSerializer,
     SuggestionSerializer,
 )
@@ -200,6 +201,54 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 class DeleteCommentView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [PostThrottle]
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = CommentDeletionRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        comment = (
+            Comment.objects.select_for_update()
+            .filter(
+                pk=serializer.validated_data['comment_id'],
+                email__iexact=serializer.validated_data['email'],
+            )
+            .first()
+        )
+        response = {
+            'detail': 'Se os dados corresponderem, enviaremos um novo link de exclusão para o e-mail informado.'
+        }
+        if comment is None:
+            return Response(response, status=status.HTTP_202_ACCEPTED)
+
+        deletion_token = secrets.token_urlsafe(32)
+        comment.delete_token_hash = hashlib.sha256(deletion_token.encode()).hexdigest()
+        comment.delete_token_expires_at = timezone.now() + timedelta(days=7)
+        comment.save(update_fields=['delete_token_hash', 'delete_token_expires_at'])
+        deletion_url = (
+            f"{settings.FRONTEND_URL.rstrip('/')}/excluir-comentario?"
+            f"{urlencode({'token': deletion_token})}"
+        )
+        try:
+            sent_count = send_mail(
+                subject='Link para excluir seu comentário',
+                message=(
+                    f"Olá, {comment.author_name}!\n\n"
+                    "Recebemos uma solicitação para excluir seu comentário. "
+                    "Se foi você, acesse:\n"
+                    f"{deletion_url}\n\n"
+                    "Este link expira em 7 dias e pode ser usado uma única vez."
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[comment.email],
+                fail_silently=False,
+            )
+        except Exception as error:
+            logger.exception('Falha ao enviar link de exclusão do comentário.')
+            raise EmailDeliveryUnavailable() from error
+        if sent_count != 1:
+            raise EmailDeliveryUnavailable()
+        return Response(response, status=status.HTTP_202_ACCEPTED)
 
     @transaction.atomic
     def delete(self, request):

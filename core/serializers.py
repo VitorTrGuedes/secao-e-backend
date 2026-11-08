@@ -24,6 +24,11 @@ class CommentDeletionSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=128, write_only=True, trim_whitespace=True)
 
 
+class CommentDeletionRequestSerializer(serializers.Serializer):
+    comment_id = serializers.IntegerField(min_value=1)
+    email = serializers.EmailField()
+
+
 class ArticleSerializer(serializers.ModelSerializer):
     comments = serializers.SerializerMethodField()
     content = serializers.SerializerMethodField()

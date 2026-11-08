@@ -67,6 +67,7 @@ Após uma execução bem-sucedida, a API passa a servir as notícias importadas.
 | `POST` | `/api/comments/` | Envia comentário para o e-mail informado confirmar (Rate Limit: 5/min) | Pública |
 | `POST` | `/api/comments/confirm/` | Confirma o e-mail e publica o comentário; link válido por 24 horas e uso único | Pública |
 | `DELETE` | `/api/comments/delete/` | Exclui o comentário usando o token recebido por e-mail; token válido por 7 dias e uso único | Pública com token |
+| `POST` | `/api/comments/delete/` | Solicita um novo link de exclusão informando `comment_id` e o e-mail do comentário | Pública |
 | `POST` | `/api/suggestions/` | Envio de sugestão de próxima crítica (Rate Limit: 5/min) | Pública |
 | `GET/POST` | `/admin/` | Painel Administrativo com 2FA | Superuser + TOTP |
 | `GET/POST` | `/recuperar-senha/` | Fluxo de recuperação de senha por e-mail | Pública |
@@ -74,6 +75,8 @@ Após uma execução bem-sucedida, a API passa a servir as notícias importadas.
 Comentários novos só aparecem depois da confirmação do e-mail. O endereço fica privado, não é incluído nas respostas públicas da API e pode ser consultado no painel administrativo. No `/admin/`, filtre comentários por status, desmarque `is_approved` para ocultá-los ou use a ação de exclusão para removê-los.
 
 O e-mail de confirmação também inclui o link `https://dominio-do-frontend/excluir-comentario?token=TOKEN`. O frontend deve enviar o token no corpo JSON de `DELETE /api/comments/delete/`, no formato `{ "token": "TOKEN" }`. A resposta de sucesso é `204 No Content`; token inválido ou expirado retorna `404`. O token é armazenado somente como hash e não aparece em respostas da API. Comentários públicos incluem `can_delete: false` para visitantes.
+
+O botão de exclusão pode solicitar um novo link com `POST /api/comments/delete/` e `{ "comment_id": 123, "email": "autor@example.com" }`. A resposta é `202 Accepted` com mensagem neutra, independentemente de os dados corresponderem, para não revelar quais e-mails possuem comentários.
 
 Para habilitar `/api/ratings/`, configure `OMDB_API_KEY` no ambiente. As consultas bem-sucedidas ficam em cache por 24 horas; esse período pode ser alterado com `OMDB_CACHE_TTL_HOURS`. A resposta contém `imdb_rating`, `imdb_votes` e `rotten_tomatoes_rating` (ou `null` quando a fonte não disponibilizar a nota).
 
