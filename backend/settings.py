@@ -158,7 +158,10 @@ CORS_ALLOW_ALL_ORIGINS = True
 # EMAIL_USE_TLS = True
 # EMAIL_HOST_USER = 'seu-email@gmail.com'
 # EMAIL_HOST_PASSWORD = os.getenv('EMAIL_APP_PASSWORD')
-DEFAULT_FROM_EMAIL = 'Seção E <suporte@secao-e.com>'
+DEFAULT_FROM_EMAIL = os.getenv(
+    'DEFAULT_FROM_EMAIL',
+    'Seção E <contato@secao-e.com.br>',
+)
 SUGGESTIONS_EMAIL = os.getenv('SUGGESTIONS_EMAIL', 'secao.e.br@gmail.com')
 SUGGESTIONS_FROM_EMAIL = os.getenv(
     'SUGGESTIONS_FROM_EMAIL',

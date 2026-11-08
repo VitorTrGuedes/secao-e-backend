@@ -173,6 +173,7 @@ FRONTEND_URL (URL pública do frontend, usada no link de confirmação de coment
 RESEND_API_KEY (chave da API do Resend para enviar os e-mails de confirmação)
 SUGGESTIONS_EMAIL (destinatário das sugestões de crítica; padrão: secao.e.br@gmail.com)
 SUGGESTIONS_FROM_EMAIL (remetente das sugestões; padrão: Seção E <contato@secao-e.com.br>)
+DEFAULT_FROM_EMAIL (remetente dos e-mails de confirmação de comentários; padrão: Seção E <contato@secao-e.com.br>)
 TMDB_API_KEY (chave da API do TMDB para consultar disponibilidade em streaming)
 TMDB_CACHE_TTL_HOURS (validade do cache de streaming; padrão: 24)
 
