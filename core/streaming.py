@@ -1,4 +1,5 @@
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 
 import requests
@@ -8,6 +9,7 @@ from django.utils import timezone
 from .models import StreamingAvailabilityCache
 
 logger = logging.getLogger(__name__)
+MAX_SEARCH_RESULTS = 8
 
 
 class StreamingServiceError(Exception):
@@ -112,10 +114,14 @@ def get_streaming_titles(title=''):
             {**item, 'media_type': 'tv'} for item in series[:5]
         ]
 
-    titles = [
-        _title_from_result(result, _providers_for(result.get('media_type', 'movie'), result['id']))
-        for result in results
-    ]
+    def build_title(result):
+        return _title_from_result(
+            result,
+            _providers_for(result.get('media_type', 'movie'), result['id']),
+        )
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        titles = list(executor.map(build_title, results))
     return titles
 
 
@@ -137,7 +143,7 @@ def _search_titles(title, params):
             item for item in results
             if item.get('media_type') in ('movie', 'tv')
         ]
-    return results[:20]
+    return results[:MAX_SEARCH_RESULTS]
 
 
 def get_title_details(title):
