@@ -9,7 +9,7 @@ from django.utils import timezone
 from .models import StreamingAvailabilityCache
 
 logger = logging.getLogger(__name__)
-MAX_SEARCH_RESULTS = 8
+MAX_SEARCH_RESULTS = 5
 
 
 class StreamingServiceError(Exception):
@@ -28,7 +28,7 @@ def _request_tmdb(path, params):
         response = requests.get(
             f'https://api.themoviedb.org/3/{path}',
             params={**params, 'api_key': api_key},
-            timeout=8,
+            timeout=5,
         )
         response.raise_for_status()
         return response.json()
