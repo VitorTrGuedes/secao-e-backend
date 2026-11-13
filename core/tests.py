@@ -437,6 +437,30 @@ class BuscarNoticiasCommandTest(APITestCase):
 
     @patch(
         'core.management.commands.buscar_noticias.FEEDS',
+        [{'url': 'https://example.com/feed.xml', 'category': 'cinema'}],
+    )
+    @patch('core.management.commands.buscar_noticias.urllib.request.urlopen')
+    @patch('core.management.commands.buscar_noticias.feedparser.parse')
+    def test_importa_titulo_do_feed_maior_que_200_caracteres(self, parse_feed, urlopen):
+        urlopen.return_value = BytesIO(b'<rss/>')
+        title = 'Título muito longo ' * 15
+        parse_feed.return_value = SimpleNamespace(entries=[
+            SimpleNamespace(
+                title=title,
+                summary='Resumo do feed',
+                link='https://example.com/noticia',
+            ),
+        ])
+
+        call_command('buscar_noticias')
+
+        article = Article.objects.get()
+        self.assertGreater(len(article.title), 200)
+        self.assertEqual(article.title, title.strip())
+        self.assertTrue(article.title.startswith('Título muito longo'))
+
+    @patch(
+        'core.management.commands.buscar_noticias.FEEDS',
         [{'url': 'https://example.com/games.xml', 'category': 'games'}],
     )
     @patch('core.management.commands.buscar_noticias.urllib.request.urlopen')

@@ -8,7 +8,7 @@ import urllib.error
 import urllib.request
 from urllib.parse import urljoin, urlsplit
 from core.content import extract_article_content, sanitize_article_html
-from core.models import Article
+from core.models import ARTICLE_TITLE_MAX_LENGTH, Article
 
 # Fontes RSS de notícias públicas
 FEEDS = [
@@ -183,7 +183,6 @@ class Command(BaseCommand):
                 title = getattr(entry, 'title', '').strip()
                 if not title:
                     continue
-
                 slug = slugify(title)[:50]
                 if not slug:
                     continue

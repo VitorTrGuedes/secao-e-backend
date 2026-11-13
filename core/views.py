@@ -15,7 +15,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
-from .models import Article, Comment, Suggestion
+from .models import ARTICLE_TITLE_MAX_LENGTH, Article, Comment, Suggestion
 from .ratings import RatingsServiceError, RatingsTitleNotFoundError, get_movie_ratings
 from .streaming import (
     StreamingServiceError,
@@ -81,9 +81,9 @@ class MovieRatingsView(APIView):
                 {'detail': 'Informe o título do filme no parâmetro title.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if len(title) > 200:
+        if len(title) > ARTICLE_TITLE_MAX_LENGTH:
             return Response(
-                {'detail': 'O título deve ter no máximo 200 caracteres.'},
+                {'detail': f'O título deve ter no máximo {ARTICLE_TITLE_MAX_LENGTH} caracteres.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -115,9 +115,9 @@ class StreamingAvailabilityView(APIView):
                 return Response({'results': get_streaming_titles()})
             except StreamingServiceError as error:
                 return Response({'detail': str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        if len(title) > 200:
+        if len(title) > ARTICLE_TITLE_MAX_LENGTH:
             return Response(
-                {'detail': 'O título deve ter no máximo 200 caracteres.'},
+                {'detail': f'O título deve ter no máximo {ARTICLE_TITLE_MAX_LENGTH} caracteres.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -145,9 +145,9 @@ class TitleDetailsView(APIView):
                 {'detail': 'Informe o título no parâmetro title.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if len(title) > 200:
+        if len(title) > ARTICLE_TITLE_MAX_LENGTH:
             return Response(
-                {'detail': 'O título deve ter no máximo 200 caracteres.'},
+                {'detail': f'O título deve ter no máximo {ARTICLE_TITLE_MAX_LENGTH} caracteres.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

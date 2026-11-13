@@ -7,10 +7,11 @@ CATEGORY_CHOICES = (('cinema', 'Cinema'),
                     ('serie', 'Série'),
                     ('games', 'Games')
 )
+ARTICLE_TITLE_MAX_LENGTH = 500
 
 class Article(models.Model):
     TYPE_CHOICES = (('news', 'Notícia'), ('review', 'Crítica'))
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=ARTICLE_TITLE_MAX_LENGTH)
     ratings_title = models.CharField(
         max_length=200,
         blank=True,
