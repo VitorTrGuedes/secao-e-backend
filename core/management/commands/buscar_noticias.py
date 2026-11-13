@@ -46,6 +46,7 @@ PALAVRAS_CHAVE_PRODUTOS = [
 ]
 
 NOTICIAS_RETIDAS_DIAS = 7
+NOTICIAS_POR_EXECUCAO = 6
 
 
 def _entry_value(entry, key, default=None):
@@ -158,6 +159,8 @@ class Command(BaseCommand):
         total_novas = 0
         total_atualizadas = 0
         feeds_consultados = 0
+        noticias_processadas = 0
+        slugs_processados = set()
 
         # Simula um navegador real para não ser bloqueado pelos sites
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
@@ -165,6 +168,9 @@ class Command(BaseCommand):
         falhas_feed = []
 
         for source in FEEDS:
+            if noticias_processadas >= NOTICIAS_POR_EXECUCAO:
+                break
+
             try:
                 req = urllib.request.Request(source['url'], headers=headers)
                 with urllib.request.urlopen(req, timeout=12) as response:
@@ -179,12 +185,15 @@ class Command(BaseCommand):
             feeds_consultados += 1
             feed = feedparser.parse(xml_content)
 
-            for entry in feed.entries[:6]:
+            for entry in feed.entries:
+                if noticias_processadas >= NOTICIAS_POR_EXECUCAO:
+                    break
+
                 title = getattr(entry, 'title', '').strip()
                 if not title:
                     continue
                 slug = slugify(title)[:50]
-                if not slug:
+                if not slug or slug in slugs_processados:
                     continue
                 existing_article = Article.objects.filter(slug=slug).first()
                 if existing_article and (
@@ -250,6 +259,9 @@ class Command(BaseCommand):
                     )
                     total_novas += 1
                     self.stdout.write(f"[{categoria.upper()}] {title}")
+
+                slugs_processados.add(slug)
+                noticias_processadas += 1
 
         self.stdout.write(self.style.SUCCESS(
             f"\nFinalizado! {total_novas} notícias adicionadas e {total_atualizadas} atualizadas."

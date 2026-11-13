@@ -49,7 +49,9 @@ Para críticas com título traduzido, preencha no `/admin/` o campo `ratings_tit
 O GitHub Actions executa a importação RSS uma vez por dia às 07:10 no horário de Brasília (UTC−3). O agendador usa UTC, portanto o workflow está configurado para 10:10 UTC. Para habilitar a execução, cadastre a connection string do PostgreSQL como segredo `DATABASE_URL` em **Settings → Secrets and variables → Actions**. O GitHub pode iniciar tarefas agendadas alguns minutos depois do horário configurado.
 O workflow também aceita o segredo opcional `SECRET_KEY`; quando ele não existe, usa uma chave exclusiva para o CI, suficiente para executar o comando de importação sem expor a chave da aplicação.
 
-Para atualizar as notícias manualmente em caso de falha:
+Cada execução seleciona até seis notícias válidas, ignorando duplicatas e matérias
+fora do escopo, e atualiza ou adiciona esse conjunto. Para atualizar as notícias
+manualmente em caso de falha:
 1. Abra o repositório no GitHub e vá até a aba **Actions**.
 2. Na lista de workflows, selecione **Importar notícias RSS**.
 3. Clique em **Run workflow**, mantenha a branch `main` selecionada e confirme em **Run workflow**.

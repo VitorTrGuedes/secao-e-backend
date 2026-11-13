@@ -461,6 +461,42 @@ class BuscarNoticiasCommandTest(APITestCase):
 
     @patch(
         'core.management.commands.buscar_noticias.FEEDS',
+        [{'url': 'https://example.com/feed.xml', 'category': 'cinema'}],
+    )
+    @patch('core.management.commands.buscar_noticias.urllib.request.urlopen')
+    @patch('core.management.commands.buscar_noticias.feedparser.parse')
+    def test_processa_seis_noticias_validas_mesmo_com_itens_ignorados(
+        self, parse_feed, urlopen
+    ):
+        urlopen.return_value = BytesIO(b'<rss/>')
+        parse_feed.return_value = SimpleNamespace(entries=[
+            SimpleNamespace(
+                title='Produto para PlayStation',
+                summary='Notícia sobre games',
+                link='https://example.com/produto',
+            ),
+            *[
+                SimpleNamespace(
+                    title=f'Notícia válida {index}',
+                    summary=f'Resumo {index}',
+                    link=f'https://example.com/noticia-{index}',
+                )
+                for index in range(1, 7)
+            ],
+        ])
+
+        call_command('buscar_noticias')
+
+        self.assertEqual(
+            Article.objects.filter(author='Redação Seção E').count(),
+            6,
+        )
+        self.assertFalse(
+            Article.objects.filter(title='Produto para PlayStation').exists()
+        )
+
+    @patch(
+        'core.management.commands.buscar_noticias.FEEDS',
         [{'url': 'https://example.com/games.xml', 'category': 'games'}],
     )
     @patch('core.management.commands.buscar_noticias.urllib.request.urlopen')
